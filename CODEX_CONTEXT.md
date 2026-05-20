@@ -1,4 +1,4 @@
-# Codex context - Opacka
+# Codex context - Odjazdy
 
 ## Jak pracować z projektem
 
@@ -11,14 +11,21 @@ Po istotnych decyzjach aktualizuj oba pliki: pierwszy ludzkim językiem, drugi z
 
 ## Cel techniczny
 
-Zbudować bardzo małą aplikację webową/PWA do sprawdzania odjazdów z przystanku Opacka. Ma działać świetnie na telefonie i dać się dodać do ekranu głównego.
+Mała statyczna aplikacja webowa/PWA do sprawdzania odjazdów z kilku ulubionych przystanków w Gdańsku. Ma działać dobrze na telefonie, być szybka po otwarciu i nadawać się do dodania na ekran główny.
 
-## Źródła danych
+## Architektura
+
+- Bez bundlera i backendu: czysty `index.html`, `styles.css`, `app.js`.
+- `app.js` ma główną konfigurację `STOP_GROUPS`.
+- Każdy element `STOP_GROUPS` to zakładka dla jednego zespołu przystanków.
+- Wewnątrz zakładki są słupki z osobnymi endpointami `departures?stopId=...`.
+- Service worker cache'uje tylko pliki aplikacji, nie cache'uje odpowiedzi API ZTM.
+
+## Źródło danych
 
 Oficjalne API:
 
-- `https://ckan2.multimediagdansk.pl/departures?stopId=2047`
-- `https://ckan2.multimediagdansk.pl/departures?stopId=2048`
+- `https://ckan2.multimediagdansk.pl/departures?stopId={stopId}`
 
 Nagłówki sprawdzone 2026-05-20:
 
@@ -26,14 +33,7 @@ Nagłówki sprawdzone 2026-05-20:
 - `Access-Control-Allow-Origin: *`
 - `Cache-Control: max-age=20`
 
-Wniosek: frontend może wykonywać `fetch` bez własnego backendu/proxy.
-
-Endpoint używany przez widget ZTM:
-
-- `https://ztm.gda.pl/rozklady/pobierz_SIP2.php?n[0]=2047&sn=dd711a880f8d5c87fe3948607a0dc7da&t=&l=`
-- `https://ztm.gda.pl/rozklady/pobierz_SIP2.php?n[0]=2048&sn=dd711a880f8d5c87fe3948607a0dc7da&t=&l=`
-
-Zwraca HTML tablicy SIP, nie preferować jako głównego źródła. Może być użyteczne jako punkt porównawczy UI.
+Frontend może wykonywać `fetch` bez backendu/proxy.
 
 ## Struktura danych JSON
 
@@ -50,58 +50,52 @@ Istotne pola odjazdu:
 - `theoreticalTime` - czas rozkładowy, ISO-8601 UTC.
 - `status` - `REALTIME` albo `SCHEDULED`.
 - `delayInSeconds` - liczba sekund opóźnienia/przyspieszenia albo `null`.
-- `vehicleCode`, `vehicleId` - dostępne zwykle tylko dla realtime.
 
-Uwaga: PowerShell `Invoke-WebRequest` pokazał błędnie zakodowane polskie znaki w konsoli (`StrzyÅ¼a`), ale endpoint deklaruje JSON i w przeglądarce/fetch powinien być dekodowany jako UTF-8. Przy implementacji zweryfikować w UI.
+## Skonfigurowane przystanki
 
-## Przystanki
+Opacka:
 
-- `2047` - Opacka w jedną stronę; przykładowe kierunki z requestu: `Jelitkowo`, `Zaspa`.
-- `2048` - Opacka 02; przykładowe kierunki z requestu: `Strzyża PKM`, `Nowe Ogrody`, `Łostowice Świętokrzyska`.
+- `2048` - Opacka 02; kierunki m.in. centrum/Wrzeszcz.
+- `2047` - Opacka; kierunki m.in. Jelitkowo/Zaspa.
 
-Pierwotne strony ZTM:
+Płowce:
 
-- `https://ztm.gda.pl/rozklady/rozklad-006_20260417-36-1-dzien-20260520.html`
-- `https://ztm.gda.pl/rozklady/rozklad-006_20260417-7-2-dzien-20260520.html`
+- `1330` - Płowce 01; kierunki m.in. Muzeum II Wojny Światowej / Dworzec Główny.
+- `1331` - Płowce 02; kierunki m.in. Jasień PKM / Oliwa / Port Lotniczy.
 
-W stopce stron znaleziono wywołania `poll('pobierz_SIP2.php?n[0]=2047...','SIP')` i `poll('pobierz_SIP2.php?n[0]=2048...','SIP')`.
-
-## Preferowana architektura
-
-Start: statyczna aplikacja PWA, bez backendu.
-
-Proponowany stack, jeśli nie pojawią się inne wymagania:
-
-- Vite + TypeScript albo czysty HTML/CSS/JS, zależnie od tego, jak mały ma być projekt.
-- Service worker i manifest PWA.
-- Jeden ekran z dwoma panelami kierunków.
-- `fetch` do obu endpointów równolegle.
-- Odświeżanie co 20-30 sekund, z widocznym czasem ostatniej aktualizacji.
-
-## Wdrożenie
-
-Najprościej: GitHub Pages, Netlify albo Cloudflare Pages.
-
-Preferencja techniczna na start: statyczny hosting bez serverless, bo CORS działa. Cloudflare Pages zostawić jako wygodną opcję, jeśli później będzie potrzebny proxy/cache albo własny endpoint.
-
-Aktualna decyzja: GitHub Pages z root gałęzi repozytorium.
-
-2026-05-20: po zgodzie użytkownika repozytorium zostało zmienione na publiczne. Pages zostało włączone komendą `gh api --method POST repos/michalkurzelewski/opacka/pages -f source[branch]=master -f source[path]=/`; status końcowy: `built`. Publiczny adres aplikacji: `https://michalkurzelewski.github.io/opacka/`. Repo homepage ustawione na ten URL.
-
-## Pliki aplikacji
-
-- `index.html` - główny ekran.
-- `styles.css` - responsywny styl mobile-first.
-- `app.js` - pobieranie danych, renderowanie, auto-refresh.
-- `manifest.webmanifest` - PWA manifest.
-- `sw.js` - service worker cache'ujący pliki aplikacji, ale nie cache'ujący odpowiedzi API ZTM.
-- `icon.svg` - ikona aplikacji.
-- `.nojekyll` - wyłączenie przetwarzania Jekyll na GitHub Pages.
+Źródło dla Płowce: strona ZTM zespołu przystanków `https://ztm.gda.pl/rozklady/przystanek-264.html` oraz linki użytkownika do linii 130 z dnia 2026-05-20.
 
 ## UX notatki
 
-- Widok ma być natychmiastowy: żadnej strony startowej.
-- Duże czasy do odjazdu, czytelne numery linii.
-- Dwa kierunki obok siebie na desktopie, jeden pod drugim na telefonie.
-- Wyróżnić odjazdy w ciągu najbliższych kilku minut.
-- Oznaczać `SCHEDULED` jako dane rozkładowe, żeby było jasne, że to nie realtime.
+- Widok startowy jest użytkowy, bez landing page.
+- Górne zakładki przełączają zespół przystanków.
+- W aktywnej zakładce słupki pokazują się obok siebie na desktopie i jeden pod drugim na telefonie.
+- Odjazdy w ciągu kilku minut są wyróżnione kolorem.
+- `SCHEDULED` jest opisane jako `rozkład`, żeby było jasne, że to nie realtime.
+
+## Wdrożenie
+
+GitHub Pages z katalogu głównego repozytorium.
+
+Publiczny adres aplikacji: `https://michalkurzelewski.github.io/opacka/`.
+
+## Lokalna weryfikacja przez Codexa
+
+W Codex Desktop lokalny Browser potrafi blokować wejście na `http://127.0.0.1:...`, `http://localhost:...` albo `file://...` dla tej aplikacji. Nie zaczynać weryfikacji od Browsera, bo to prowadzi do fałszywego tropu.
+
+Najprostsza ścieżka weryfikacji po zmianach:
+
+1. Sprawdź składnię:
+   - `node --check app.js`
+   - `node --check sw.js`
+2. Sprawdź, czy statyczny serwer odpowiada, uruchamiając go tylko na czas jednej komendy:
+   - `$job = Start-Job -ScriptBlock { Set-Location 'C:\Users\micku\RiderProjects\opacka'; python -m http.server 4173 --bind 127.0.0.1 }; Start-Sleep -Seconds 2; try { (Invoke-WebRequest -Uri 'http://127.0.0.1:4173/' -UseBasicParsing).StatusCode } finally { Stop-Job $job; Remove-Job $job }`
+   - oczekiwany wynik: `200`.
+3. Dla nowych słupków potwierdź endpoint API bezpośrednio:
+   - `Invoke-RestMethod -Uri 'https://ckan2.multimediagdansk.pl/departures?stopId=1330' | Select-Object -ExpandProperty departures | Select-Object -First 1 routeShortName,headsign,status`
+   - analogicznie dla innych `stopId`.
+4. Sprawdź porządek zmian:
+   - `git diff --check`
+   - `git status --short`
+
+Jeśli potrzebna jest wizualna weryfikacja UI, najrozsądniej poprosić użytkownika o otwarcie lokalnego adresu w zwykłej przeglądarce albo zweryfikować po publikacji na GitHub Pages. Nie obchodzić blokady Browsera alternatywnymi kanałami automatyzacji przeglądarki.

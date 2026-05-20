@@ -1,7 +1,7 @@
 {
-  "name": "Opacka",
-  "short_name": "Opacka",
-  "description": "Najbliższe odjazdy tramwajów z przystanku Opacka.",
+  "name": "Odjazdy",
+  "short_name": "Odjazdy",
+  "description": "Najbliższe odjazdy z ulubionych przystanków w Gdańsku.",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#eef4ef",

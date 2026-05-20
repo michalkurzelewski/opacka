@@ -4,8 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#1f2523">
-    <meta name="description" content="Najbliższe odjazdy tramwajów z przystanku Opacka.">
-    <title>Opacka</title>
+    <meta name="description" content="Najbliższe odjazdy z ulubionych przystanków w Gdańsku.">
+    <title>Odjazdy</title>
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="icon" href="icon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="styles.css">
@@ -14,8 +14,9 @@
     <main class="app-shell">
       <header class="topbar">
         <div>
-          <p class="eyebrow">Przystanek</p>
-          <h1>Opacka</h1>
+          <p class="eyebrow">Przystanki</p>
+          <h1 id="currentStopTitle">Odjazdy</h1>
+          <p class="topbar-note" id="currentStopNote"></p>
         </div>
         <button class="icon-button" id="refreshButton" type="button" aria-label="Odśwież odjazdy" title="Odśwież">
           <svg aria-hidden="true" viewBox="0 0 24 24">
@@ -29,29 +30,9 @@
         <span id="updatedText"></span>
       </section>
 
-      <section class="departures" aria-label="Odjazdy">
-        <article class="stop-panel" data-stop-card="2048">
-          <div class="stop-heading">
-            <div>
-              <p class="stop-code">Słupek 2048</p>
-              <h2>Do centrum i Wrzeszcza</h2>
-            </div>
-            <span class="direction-pill">Opacka 02</span>
-          </div>
-          <ul class="departure-list" id="departures-2048"></ul>
-        </article>
+      <nav class="stop-tabs" id="stopTabs" role="tablist" aria-label="Przystanki"></nav>
 
-        <article class="stop-panel" data-stop-card="2047">
-          <div class="stop-heading">
-            <div>
-              <p class="stop-code">Słupek 2047</p>
-              <h2>Do Jelitkowa i Zaspy</h2>
-            </div>
-            <span class="direction-pill">Opacka</span>
-          </div>
-          <ul class="departure-list" id="departures-2047"></ul>
-        </article>
-      </section>
+      <div id="stopPanels"></div>
     </main>
 
     <script src="app.js" type="module"></script>
