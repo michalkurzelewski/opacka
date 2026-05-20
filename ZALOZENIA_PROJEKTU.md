@@ -53,10 +53,12 @@ Rekomendacja na start: GitHub Pages, jeśli repozytorium będzie na GitHubie. Da
 
 Alternatywa: Cloudflare Pages, jeśli zależy nam na łatwym dodaniu funkcji proxy/cache w przyszłości. Na ten moment proxy nie jest potrzebne, bo oficjalne API ma CORS (`Access-Control-Allow-Origin: *`) oraz cache około 20 sekund.
 
+Status z 2026-05-20: aplikacja została przygotowana i wypchnięta do repozytorium, ale GitHub odmówił włączenia Pages dla prywatnego repozytorium komunikatem, że obecny plan nie wspiera GitHub Pages dla tego repo. Do wyboru są: zmiana repozytorium na publiczne, przejście na plan GitHub wspierający Pages dla prywatnych repozytoriów albo wdrożenie tej samej statycznej aplikacji przez Cloudflare Pages/Netlify.
+
 ## Decyzje
 
 - Budujemy małą aplikację webową/PWA zamiast natywnej aplikacji mobilnej.
 - Pierwsza wersja nie potrzebuje backendu.
 - Dane pobieramy z oficjalnego API `ckan2.multimediagdansk.pl/departures`.
 - Aplikacja ma być użyteczna od razu po otwarciu, bez dodatkowej nawigacji.
-- Hosting: GitHub Pages z katalogu głównego repozytorium.
+- Preferowany hosting: GitHub Pages z katalogu głównego repozytorium, o ile repozytorium/plan GitHub na to pozwoli.
