@@ -1,0 +1,266 @@
+:root {
+  color-scheme: light;
+  --bg: #eef4ef;
+  --surface: #fbfaf4;
+  --surface-strong: #ffffff;
+  --ink: #17211d;
+  --muted: #5c6963;
+  --line: #d6ded7;
+  --accent: #0f6b55;
+  --urgent: #b4322b;
+  --scheduled: #71643d;
+  --shadow: 0 18px 45px rgba(23, 33, 29, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(238, 244, 239, 0.92)), var(--bg);
+  color: var(--ink);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.app-shell {
+  width: min(100%, 980px);
+  margin: 0 auto;
+  padding: max(18px, env(safe-area-inset-top)) 16px max(20px, env(safe-area-inset-bottom));
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 8px 0 14px;
+}
+
+.eyebrow,
+.stop-code {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0;
+}
+
+h1,
+h2 {
+  margin: 0;
+  letter-spacing: 0;
+}
+
+h1 {
+  font-size: clamp(2rem, 12vw, 3.6rem);
+  line-height: 0.95;
+}
+
+h2 {
+  font-size: 1.03rem;
+  line-height: 1.2;
+}
+
+.icon-button {
+  display: inline-grid;
+  width: 48px;
+  height: 48px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-strong);
+  color: var(--accent);
+  box-shadow: 0 8px 22px rgba(23, 33, 29, 0.08);
+  cursor: pointer;
+}
+
+.icon-button svg {
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.2;
+}
+
+.icon-button:active {
+  transform: translateY(1px);
+}
+
+.icon-button.is-loading svg {
+  animation: spin 0.8s linear infinite;
+}
+
+.status-strip {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.departures {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.stop-panel {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.stop-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px;
+  background: #1f2523;
+  color: #f8f3e5;
+}
+
+.stop-heading .stop-code {
+  color: #b8c9c1;
+}
+
+.direction-pill {
+  max-width: 42%;
+  padding: 5px 8px;
+  border: 1px solid rgba(248, 243, 229, 0.18);
+  border-radius: 999px;
+  color: #d9efe8;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-align: center;
+  white-space: normal;
+}
+
+.departure-list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.departure {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  min-height: 58px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.52);
+}
+
+.departure:first-child {
+  border-top: 0;
+}
+
+.line-badge {
+  display: inline-grid;
+  min-width: 44px;
+  height: 38px;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 1.18rem;
+  font-weight: 900;
+}
+
+.destination {
+  min-width: 0;
+}
+
+.destination strong {
+  display: block;
+  overflow-wrap: anywhere;
+  font-size: 1rem;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.status-tag {
+  color: var(--accent);
+  font-weight: 800;
+}
+
+.status-tag.scheduled {
+  color: var(--scheduled);
+}
+
+.time {
+  min-width: 82px;
+  color: var(--ink);
+  font-size: 1.08rem;
+  font-weight: 900;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.departure.soon .time {
+  color: var(--urgent);
+}
+
+.departure.soon .line-badge {
+  background: var(--urgent);
+}
+
+.empty-state {
+  padding: 18px 14px;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 720px) {
+  .app-shell {
+    padding-inline: 12px;
+  }
+
+  .departures {
+    grid-template-columns: 1fr;
+  }
+
+  .status-strip {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .departure {
+    grid-template-columns: 48px minmax(0, 1fr) auto;
+  }
+
+  .time {
+    min-width: 74px;
+    font-size: 1rem;
+  }
+}

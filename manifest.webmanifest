@@ -1,0 +1,17 @@
+{
+  "name": "Opacka",
+  "short_name": "Opacka",
+  "description": "Najbliższe odjazdy tramwajów z przystanku Opacka.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#eef4ef",
+  "theme_color": "#1f2523",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
