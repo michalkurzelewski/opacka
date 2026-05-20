@@ -84,9 +84,9 @@ Najprościej: GitHub Pages, Netlify albo Cloudflare Pages.
 
 Preferencja techniczna na start: statyczny hosting bez serverless, bo CORS działa. Cloudflare Pages zostawić jako wygodną opcję, jeśli później będzie potrzebny proxy/cache albo własny endpoint.
 
-Aktualna decyzja: GitHub Pages z root gałęzi repozytorium, jeśli będzie dostępne dla repo.
+Aktualna decyzja: GitHub Pages z root gałęzi repozytorium.
 
-2026-05-20: próba `gh api --method POST repos/michalkurzelewski/opacka/pages -f source[branch]=master -f source[path]=/` zakończyła się HTTP 422: `Your current plan does not support GitHub Pages for this repository.` Repo jest prywatne. Nie zmieniać widoczności repo bez wyraźnej zgody użytkownika. Najbliższe opcje: upublicznić repo, użyć planu GitHub z Pages dla prywatnych repo albo wdrożyć statyczną aplikację przez Cloudflare Pages/Netlify.
+2026-05-20: po zgodzie użytkownika repozytorium zostało zmienione na publiczne. Pages zostało włączone komendą `gh api --method POST repos/michalkurzelewski/opacka/pages -f source[branch]=master -f source[path]=/`; status końcowy: `built`. Publiczny adres aplikacji: `https://michalkurzelewski.github.io/opacka/`. Repo homepage ustawione na ten URL.
 
 ## Pliki aplikacji
 
