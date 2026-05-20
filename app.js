@@ -301,5 +301,34 @@ refreshDepartures();
 setInterval(() => refreshDepartures(), 30000);
 
 if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("sw.js").catch(() => {});
+  let isReloadingForNewServiceWorker = false;
+
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (isReloadingForNewServiceWorker) {
+      return;
+    }
+
+    isReloadingForNewServiceWorker = true;
+    window.location.reload();
+  });
+
+  navigator.serviceWorker
+    .register("sw.js")
+    .then((registration) => {
+      registration.update().catch(() => {});
+
+      registration.addEventListener("updatefound", () => {
+        const newWorker = registration.installing;
+        if (!newWorker) {
+          return;
+        }
+
+        newWorker.addEventListener("statechange", () => {
+          if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
+            newWorker.postMessage({ type: "SKIP_WAITING" });
+          }
+        });
+      });
+    })
+    .catch(() => {});
 }

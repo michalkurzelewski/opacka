@@ -1,4 +1,5 @@
-const CACHE_NAME = "opacka-v2";
+const CACHE_NAME = "opacka-v3";
+const CACHE_PREFIX = "opacka-";
 const APP_FILES = [
   "./",
   "./index.html",
@@ -9,15 +10,35 @@ const APP_FILES = [
 ];
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_FILES)));
+  event.waitUntil(
+    caches
+      .open(CACHE_NAME)
+      .then((cache) => cache.addAll(APP_FILES))
+      .then(() => self.skipWaiting()),
+  );
 });
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))),
-    ),
+    caches.keys().then(async (keys) => {
+      const oldAppCaches = keys.filter((key) => key.startsWith(CACHE_PREFIX) && key !== CACHE_NAME);
+      await Promise.all(oldAppCaches.map((key) => caches.delete(key)));
+      await self.clients.claim();
+
+      if (!oldAppCaches.length) {
+        return;
+      }
+
+      const clients = await self.clients.matchAll({ type: "window" });
+      await Promise.all(clients.map((client) => client.navigate(client.url)));
+    }),
   );
+});
+
+self.addEventListener("message", (event) => {
+  if (event.data?.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
 });
 
 self.addEventListener("fetch", (event) => {
