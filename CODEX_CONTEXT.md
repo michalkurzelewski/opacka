@@ -87,6 +87,8 @@ Płowce:
 - W aktywnej zakładce słupki pokazują się obok siebie na desktopie i jeden pod drugim na telefonie.
 - Odjazdy w ciągu kilku minut są wyróżnione kolorem.
 - `SCHEDULED` jest opisane jako `rozkład`, żeby było jasne, że to nie realtime.
+- Po pierwszym poprawnym pobraniu nagłówek widoku stale pokazuje czas pochodzenia ostatnich danych i przycisk odświeżania; trwające odświeżanie sygnalizuje animacja ikony bez usuwania czasu.
+- Zakładki nie pokazują liczby słupków; przycisk dodawania przystanku jest ostatnim elementem ich wiersza.
 
 ## Wdrożenie
 

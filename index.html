@@ -12,32 +12,16 @@
   </head>
   <body>
     <main class="app-shell">
-      <header class="topbar">
-        <div>
-          <p class="eyebrow">Przystanki</p>
-          <h1 id="currentStopTitle">Odjazdy</h1>
-          <p class="topbar-note" id="currentStopNote"></p>
-        </div>
-        <div class="topbar-actions">
-          <button class="icon-button" id="manageStopsButton" type="button" aria-label="Zarządzaj przystankami" title="Moje przystanki">
-            <svg aria-hidden="true" viewBox="0 0 24 24">
-              <path d="M12 5v14M5 12h14"></path>
-            </svg>
-          </button>
-          <button class="icon-button" id="refreshButton" type="button" aria-label="Odśwież odjazdy" title="Odśwież">
-            <svg aria-hidden="true" viewBox="0 0 24 24">
-              <path d="M20 11a8.1 8.1 0 0 0-15.5-2M4 5v4h4M4 13a8.1 8.1 0 0 0 15.5 2M20 19v-4h-4"></path>
-            </svg>
-          </button>
-        </div>
+      <header class="refresh-bar">
+        <span id="statusText" aria-live="polite">Pobieranie danych...</span>
+        <button class="icon-button" id="refreshButton" type="button" aria-label="Odśwież odjazdy" title="Odśwież">
+          <svg aria-hidden="true" viewBox="0 0 24 24">
+            <path d="M20 11a8.1 8.1 0 0 0-15.5-2M4 5v4h4M4 13a8.1 8.1 0 0 0 15.5 2M20 19v-4h-4"></path>
+          </svg>
+        </button>
       </header>
 
-      <section class="status-strip" aria-live="polite">
-        <span id="statusText">Ładowanie odjazdów...</span>
-        <span id="updatedText"></span>
-      </section>
-
-      <nav class="stop-tabs" id="stopTabs" role="tablist" aria-label="Przystanki"></nav>
+      <nav class="stop-tabs" id="stopTabs" aria-label="Przystanki"></nav>
 
       <div id="stopPanels"></div>
     </main>

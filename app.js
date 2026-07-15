@@ -54,11 +54,7 @@ const DEFAULT_GROUP_IDS = DEFAULT_STOP_GROUPS.map((group) => group.id);
 const MAX_MANAGER_RESULTS = 80;
 
 const refreshButton = document.querySelector("#refreshButton");
-const manageStopsButton = document.querySelector("#manageStopsButton");
 const statusText = document.querySelector("#statusText");
-const updatedText = document.querySelector("#updatedText");
-const currentStopTitle = document.querySelector("#currentStopTitle");
-const currentStopNote = document.querySelector("#currentStopNote");
 const stopTabs = document.querySelector("#stopTabs");
 const stopPanels = document.querySelector("#stopPanels");
 const stopManagerDialog = document.querySelector("#stopManagerDialog");
@@ -84,6 +80,7 @@ let stopGroups = [];
 let activeGroupId = null;
 let catalogLoadError = "";
 let refreshRequestId = 0;
+const latestUpdateByGroupId = new Map();
 let stopSettings = parseStopSettings(null);
 let editedStop = null;
 
@@ -143,8 +140,14 @@ function formatStopCount(count) {
 }
 
 function renderShell() {
+  const addStopButton = `
+    <button class="add-stop-button" type="button" data-open-stop-manager aria-label="Dodaj przystanek" title="Dodaj przystanek">
+      <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></svg>
+    </button>
+  `;
+
   if (!stopGroups.length) {
-    stopTabs.innerHTML = "";
+    stopTabs.innerHTML = addStopButton;
     stopPanels.innerHTML = `
       <section class="no-stops-panel">
         <h2>Nie masz jeszcze wybranych przystanków</h2>
@@ -152,18 +155,17 @@ function renderShell() {
         <button class="primary-button" type="button" data-open-stop-manager>Dodaj przystanek</button>
       </section>
     `;
-    currentStopTitle.textContent = "Moje przystanki";
-    currentStopNote.textContent = "Wybierz przystanki, które chcesz odświeżać";
     statusText.textContent = "Brak wybranych przystanków";
-    updatedText.textContent = "";
     refreshButton.disabled = true;
     document.title = "Moje przystanki | Odjazdy";
     return;
   }
 
-  stopTabs.innerHTML = stopGroups
-    .map(
-      (group) => `
+  stopTabs.innerHTML = `
+    <div class="stop-tab-list" role="tablist">
+      ${stopGroups
+        .map(
+          (group) => `
         <button
           class="tab-button"
           id="tab-${group.id}"
@@ -173,11 +175,13 @@ function renderShell() {
           data-stop-group="${group.id}"
         >
           <span>${escapeHtml(group.label)}</span>
-          <small>${formatStopCount(group.stops.length)}</small>
         </button>
       `,
-    )
-    .join("");
+        )
+        .join("")}
+    </div>
+    ${addStopButton}
+  `;
 
   stopPanels.innerHTML = stopGroups
     .map(
@@ -196,6 +200,13 @@ function renderShell() {
 
   refreshButton.disabled = false;
   selectGroup(activeGroupId, { persist: false });
+}
+
+function renderLatestUpdate(groupId = activeGroupId) {
+  const latestUpdate = latestUpdateByGroupId.get(groupId);
+  statusText.textContent = latestUpdate
+    ? `Dane z ${formatter.format(new Date(latestUpdate))}`
+    : "Brak aktualnych danych";
 }
 
 function stopSettingsKey(stopReference) {
@@ -288,9 +299,8 @@ function selectGroup(groupId, options = {}) {
   }
 
   activeGroupId = group.id;
-  currentStopTitle.textContent = group.label;
-  currentStopNote.textContent = group.note;
   document.title = `${group.label} | Odjazdy`;
+  renderLatestUpdate(group.id);
 
   stopTabs.querySelectorAll("[data-stop-group]").forEach((button) => {
     const isSelected = button.dataset.stopGroup === group.id;
@@ -586,15 +596,16 @@ async function refreshDepartures(groupId = activeGroupId) {
     refreshRequestId += 1;
     refreshButton.classList.remove("is-loading");
     refreshButton.disabled = false;
-    statusText.textContent = "Wszystkie słupki są zwinięte";
-    updatedText.textContent = "";
+    renderLatestUpdate(group.id);
     return;
   }
 
   const requestId = ++refreshRequestId;
   refreshButton.classList.add("is-loading");
   refreshButton.disabled = true;
-  statusText.textContent = "Odświeżanie...";
+  if (!latestUpdateByGroupId.has(group.id)) {
+    statusText.textContent = "Pobieranie danych...";
+  }
 
   const results = await Promise.allSettled(
     visibleStops.map(async (stop) => [stop, await fetchStop(stop)]),
@@ -627,13 +638,10 @@ async function refreshDepartures(groupId = activeGroupId) {
   }
 
   const newestUpdate = successfulUpdates.sort((a, b) => b - a)[0];
-  if (failures === visibleStops.length) {
-    statusText.textContent = "Nie udało się pobrać odjazdów.";
-    updatedText.textContent = "Spróbuj odświeżyć";
-  } else {
-    statusText.textContent = failures ? "Część przystanków bez danych" : "Aktualne odjazdy";
-    updatedText.textContent = newestUpdate ? `Dane z ${formatter.format(new Date(newestUpdate))}` : "";
+  if (failures < visibleStops.length && newestUpdate) {
+    latestUpdateByGroupId.set(group.id, newestUpdate);
   }
+  renderLatestUpdate(group.id);
 
   refreshButton.classList.remove("is-loading");
   refreshButton.disabled = false;
@@ -646,8 +654,21 @@ function stopReferenceFromElement(element) {
   };
 }
 
+function openStopManagerFromEvent(event) {
+  if (!event.target.closest("[data-open-stop-manager]")) {
+    return false;
+  }
+
+  openStopManager();
+  return true;
+}
+
 function registerEventListeners() {
   stopTabs.addEventListener("click", (event) => {
+    if (openStopManagerFromEvent(event)) {
+      return;
+    }
+
     const button = event.target.closest("[data-stop-group]");
     if (button) {
       const group = selectGroup(button.dataset.stopGroup);
@@ -656,8 +677,7 @@ function registerEventListeners() {
   });
 
   stopPanels.addEventListener("click", (event) => {
-    if (event.target.closest("[data-open-stop-manager]")) {
-      openStopManager();
+    if (openStopManagerFromEvent(event)) {
       return;
     }
 
@@ -680,7 +700,6 @@ function registerEventListeners() {
   });
 
   refreshButton.addEventListener("click", () => refreshDepartures());
-  manageStopsButton.addEventListener("click", openStopManager);
   stopSearch.addEventListener("input", renderStopManager);
   stopManagerList.addEventListener("click", (event) => {
     const button = event.target.closest("[data-toggle-stop-group]");

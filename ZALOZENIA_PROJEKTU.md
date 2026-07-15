@@ -62,3 +62,5 @@ Status z 2026-05-20: aplikacja jest opublikowana pod adresem `https://michalkurz
 - Ustawienia użytkownika zapisujemy w `localStorage`; nie są synchronizowane między urządzeniami.
 - Automatycznie odświeżamy wyłącznie przystanki należące do aktualnie otwartej zakładki.
 - W nagłówku słupka pokazujemy tylko jego nazwę albo alias; dodatkowe opisy typu „Słupek” i „Najbliższe odjazdy” zostały usunięte.
+- Po pobraniu odjazdów górny obszar aplikacji zawiera wyłącznie czas pochodzenia ostatnich poprawnych danych i przycisk odświeżania; przed pierwszym poprawnym pobraniem pokazuje zwięzły stan braku lub pobierania danych. Nazwa aktywnego przystanku jest widoczna w zakładce.
+- Zakładki pokazują same nazwy zespołów przystanków, a przycisk dodawania znajduje się bezpośrednio za ostatnią zakładką.

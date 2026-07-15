@@ -35,22 +35,15 @@ body {
   padding: max(18px, env(safe-area-inset-top)) 16px max(20px, env(safe-area-inset-bottom));
 }
 
-.topbar {
+.refresh-bar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 8px 0 14px;
-}
-
-.topbar > div {
-  min-width: 0;
-}
-
-.topbar-actions {
-  display: flex;
-  flex: 0 0 auto;
-  gap: 8px;
+  justify-content: flex-end;
+  gap: 10px;
+  min-height: 48px;
+  margin-bottom: 10px;
+  color: var(--muted);
+  font-size: 0.88rem;
 }
 
 .eyebrow {
@@ -62,27 +55,14 @@ body {
   letter-spacing: 0;
 }
 
-h1,
 h2 {
   margin: 0;
   letter-spacing: 0;
 }
 
-h1 {
-  font-size: 3.2rem;
-  line-height: 0.98;
-}
-
 h2 {
   font-size: 1.03rem;
   line-height: 1.2;
-}
-
-.topbar-note {
-  margin: 6px 0 0;
-  color: var(--muted);
-  font-size: 0.95rem;
-  font-weight: 650;
 }
 
 .icon-button {
@@ -117,21 +97,9 @@ h2 {
   animation: spin 0.8s linear infinite;
 }
 
-.status-strip {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 12px;
-  padding: 10px 12px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.72);
-  color: var(--muted);
-  font-size: 0.88rem;
-}
-
 .stop-tabs {
   display: flex;
+  align-items: stretch;
   gap: 8px;
   margin-bottom: 14px;
   overflow-x: auto;
@@ -139,10 +107,12 @@ h2 {
   scrollbar-width: thin;
 }
 
+.stop-tab-list {
+  display: contents;
+}
+
 .tab-button {
-  display: grid;
-  min-width: 136px;
-  gap: 2px;
+  min-width: 128px;
   padding: 10px 12px;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -158,12 +128,6 @@ h2 {
   font-weight: 850;
 }
 
-.tab-button small {
-  color: var(--muted);
-  font-size: 0.76rem;
-  font-weight: 750;
-}
-
 .tab-button.is-active {
   border-color: rgba(15, 107, 85, 0.38);
   background: var(--accent-soft);
@@ -171,6 +135,7 @@ h2 {
 }
 
 .tab-button:focus-visible,
+.add-stop-button:focus-visible,
 .icon-button:focus-visible,
 .primary-button:focus-visible,
 .toggle-stop-button:focus-visible,
@@ -181,6 +146,27 @@ h2 {
 .secondary-button:focus-visible {
   outline: 3px solid rgba(15, 107, 85, 0.28);
   outline-offset: 2px;
+}
+
+.add-stop-button {
+  display: inline-grid;
+  width: 46px;
+  min-width: 46px;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-strong);
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.add-stop-button svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-width: 2.2;
 }
 
 .no-stops-panel {
@@ -584,10 +570,6 @@ h2 {
     padding-inline: 12px;
   }
 
-  h1 {
-    font-size: 2.35rem;
-  }
-
   .icon-button {
     width: 44px;
     height: 44px;
@@ -595,11 +577,6 @@ h2 {
 
   .departures {
     grid-template-columns: 1fr;
-  }
-
-  .status-strip {
-    align-items: flex-start;
-    flex-direction: column;
   }
 
   .departure {
