@@ -1,22 +1,30 @@
-const STOP_GROUPS = [
+import {
+  mergeDefaultAndCatalogGroups,
+  normalizeSearchText,
+  parseGroupSelection,
+  SELECTED_GROUPS_STORAGE_KEY,
+} from "./stop-preferences.mjs";
+
+const DEPARTURES_ENDPOINT = "https://ckan2.multimediagdansk.pl/departures?stopId=";
+const DEFAULT_STOP_GROUPS = [
   {
     id: "opacka",
     label: "Opacka",
-    note: "Tramwaje w stronę Oliwy i centrum",
+    note: "Tramwaje i autobusy przy Opackiej",
     stops: [
       {
         id: "2048",
         label: "Opacka 02",
         code: "2048",
         heading: "Do centrum i Wrzeszcza",
-        endpoint: "https://ckan2.multimediagdansk.pl/departures?stopId=2048",
+        endpoint: `${DEPARTURES_ENDPOINT}2048`,
       },
       {
         id: "2047",
         label: "Opacka",
         code: "2047",
         heading: "Do Jelitkowa i Zaspy",
-        endpoint: "https://ckan2.multimediagdansk.pl/departures?stopId=2047",
+        endpoint: `${DEPARTURES_ENDPOINT}2047`,
       },
     ],
   },
@@ -30,77 +38,150 @@ const STOP_GROUPS = [
         label: "Płowce 01",
         code: "1330",
         heading: "Do Śródmieścia",
-        endpoint: "https://ckan2.multimediagdansk.pl/departures?stopId=1330",
+        endpoint: `${DEPARTURES_ENDPOINT}1330`,
       },
       {
         id: "1331",
         label: "Płowce 02",
         code: "1331",
         heading: "Do Jasienia, Oliwy i lotniska",
-        endpoint: "https://ckan2.multimediagdansk.pl/departures?stopId=1331",
+        endpoint: `${DEPARTURES_ENDPOINT}1331`,
       },
     ],
   },
 ];
+const DEFAULT_GROUP_IDS = DEFAULT_STOP_GROUPS.map((group) => group.id);
+const MAX_MANAGER_RESULTS = 80;
 
 const refreshButton = document.querySelector("#refreshButton");
+const manageStopsButton = document.querySelector("#manageStopsButton");
 const statusText = document.querySelector("#statusText");
 const updatedText = document.querySelector("#updatedText");
 const currentStopTitle = document.querySelector("#currentStopTitle");
 const currentStopNote = document.querySelector("#currentStopNote");
 const stopTabs = document.querySelector("#stopTabs");
 const stopPanels = document.querySelector("#stopPanels");
+const stopManagerDialog = document.querySelector("#stopManagerDialog");
+const stopSearch = document.querySelector("#stopSearch");
+const stopManagerStatus = document.querySelector("#stopManagerStatus");
+const stopManagerList = document.querySelector("#stopManagerList");
 const formatter = new Intl.DateTimeFormat("pl-PL", {
   hour: "2-digit",
   minute: "2-digit",
   second: "2-digit",
 });
 
-let activeGroupId = getInitialGroupId();
+let availableGroups = [...DEFAULT_STOP_GROUPS];
+let availableGroupsById = new Map(availableGroups.map((group) => [group.id, group]));
+let selectedGroupIds = [];
+let stopGroups = [];
+let activeGroupId = null;
+let catalogLoadError = "";
+let refreshRequestId = 0;
+
+function normalizeCatalogGroup(group) {
+  return {
+    id: group.id,
+    label: group.label,
+    note: group.note,
+    stops: group.stops.map((stop) => ({
+      id: String(stop.id),
+      label: stop.label,
+      code: stop.code || stop.id,
+      heading: "Najbliższe odjazdy",
+      endpoint: `${DEPARTURES_ENDPOINT}${encodeURIComponent(stop.id)}`,
+    })),
+  };
+}
+
+async function loadStopCatalog() {
+  const response = await fetch("./stops.json");
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}`);
+  }
+
+  const snapshot = await response.json();
+  if (!Array.isArray(snapshot.groups)) {
+    throw new Error("Nieoczekiwany format katalogu przystanków.");
+  }
+
+  return snapshot.groups.map(normalizeCatalogGroup);
+}
+
+function getSavedGroupIds() {
+  return parseGroupSelection(
+    localStorage.getItem(SELECTED_GROUPS_STORAGE_KEY),
+    new Set(availableGroupsById.keys()),
+    DEFAULT_GROUP_IDS,
+  );
+}
 
 function getInitialGroupId() {
   const saved = localStorage.getItem("selectedStopGroup");
-  return STOP_GROUPS.some((group) => group.id === saved) ? saved : STOP_GROUPS[0].id;
+  return selectedGroupIds.includes(saved) ? saved : selectedGroupIds[0] || null;
+}
+
+function resolveSelectedGroups(groupIds) {
+  return groupIds.map((groupId) => availableGroupsById.get(groupId)).filter(Boolean);
+}
+
+function formatStopCount(count) {
+  return `${count} ${count === 1 ? "słupek" : "słupki"}`;
 }
 
 function renderShell() {
-  stopTabs.innerHTML = STOP_GROUPS.map(
-    (group) => `
-      <button
-        class="tab-button"
-        id="tab-${group.id}"
-        type="button"
-        role="tab"
-        aria-controls="panel-${group.id}"
-        data-stop-group="${group.id}"
-      >
-        <span>${escapeHtml(group.label)}</span>
-        <small>${group.stops.length} słupki</small>
-      </button>
-    `,
-  ).join("");
-
-  stopPanels.innerHTML = STOP_GROUPS.map(
-    (group) => `
-      <section
-        class="departures stop-tab-panel"
-        id="panel-${group.id}"
-        role="tabpanel"
-        aria-labelledby="tab-${group.id}"
-      >
-        ${group.stops.map(renderStopPanel).join("")}
+  if (!stopGroups.length) {
+    stopTabs.innerHTML = "";
+    stopPanels.innerHTML = `
+      <section class="no-stops-panel">
+        <h2>Nie masz jeszcze wybranych przystanków</h2>
+        <p>Otwórz „Moje przystanki”, wyszukaj przystanek i dodaj go do swoich zakładek.</p>
+        <button class="primary-button" type="button" data-open-stop-manager>Dodaj przystanek</button>
       </section>
-    `,
-  ).join("");
+    `;
+    currentStopTitle.textContent = "Moje przystanki";
+    currentStopNote.textContent = "Wybierz przystanki, które chcesz odświeżać";
+    statusText.textContent = "Brak wybranych przystanków";
+    updatedText.textContent = "";
+    refreshButton.disabled = true;
+    document.title = "Moje przystanki | Odjazdy";
+    return;
+  }
 
-  stopTabs.addEventListener("click", (event) => {
-    const button = event.target.closest("[data-stop-group]");
-    if (button) {
-      const group = selectGroup(button.dataset.stopGroup);
-      refreshDepartures(group.id);
-    }
-  });
+  stopTabs.innerHTML = stopGroups
+    .map(
+      (group) => `
+        <button
+          class="tab-button"
+          id="tab-${group.id}"
+          type="button"
+          role="tab"
+          aria-controls="panel-${group.id}"
+          data-stop-group="${group.id}"
+        >
+          <span>${escapeHtml(group.label)}</span>
+          <small>${formatStopCount(group.stops.length)}</small>
+        </button>
+      `,
+    )
+    .join("");
 
+  stopPanels.innerHTML = stopGroups
+    .map(
+      (group) => `
+        <section
+          class="departures stop-tab-panel"
+          id="panel-${group.id}"
+          role="tabpanel"
+          aria-labelledby="tab-${group.id}"
+        >
+          ${group.stops.map(renderStopPanel).join("")}
+        </section>
+      `,
+    )
+    .join("");
+
+  refreshButton.disabled = false;
   selectGroup(activeGroupId, { persist: false });
 }
 
@@ -122,9 +203,13 @@ function renderStopPanel(stop) {
 }
 
 function selectGroup(groupId, options = {}) {
-  const group = STOP_GROUPS.find((candidate) => candidate.id === groupId) ?? STOP_GROUPS[0];
-  activeGroupId = group.id;
+  const group = stopGroups.find((candidate) => candidate.id === groupId) || stopGroups[0];
+  if (!group) {
+    activeGroupId = null;
+    return null;
+  }
 
+  activeGroupId = group.id;
   currentStopTitle.textContent = group.label;
   currentStopNote.textContent = group.note;
   document.title = `${group.label} | Odjazdy`;
@@ -147,9 +232,90 @@ function selectGroup(groupId, options = {}) {
   return group;
 }
 
+function saveSelectedGroups(nextIds, preferredActiveId = activeGroupId) {
+  selectedGroupIds = [...new Set(nextIds)].filter((groupId) => availableGroupsById.has(groupId));
+  localStorage.setItem(SELECTED_GROUPS_STORAGE_KEY, JSON.stringify(selectedGroupIds));
+  stopGroups = resolveSelectedGroups(selectedGroupIds);
+  activeGroupId = selectedGroupIds.includes(preferredActiveId)
+    ? preferredActiveId
+    : selectedGroupIds[0] || null;
+
+  renderShell();
+  renderStopManager();
+
+  if (activeGroupId) {
+    refreshDepartures(activeGroupId);
+  }
+}
+
+function toggleGroup(groupId) {
+  if (selectedGroupIds.includes(groupId)) {
+    const removedIndex = selectedGroupIds.indexOf(groupId);
+    const nextIds = selectedGroupIds.filter((candidate) => candidate !== groupId);
+    const nextActiveId =
+      groupId === activeGroupId
+        ? nextIds[Math.min(removedIndex, nextIds.length - 1)] || null
+        : activeGroupId;
+    saveSelectedGroups(nextIds, nextActiveId);
+    return;
+  }
+
+  saveSelectedGroups([...selectedGroupIds, groupId], activeGroupId || groupId);
+}
+
+function groupSearchText(group) {
+  const stopIdentifiers = group.stops.map((stop) => `${stop.code} ${stop.id}`).join(" ");
+  return normalizeSearchText(`${group.label} ${group.note} ${stopIdentifiers}`);
+}
+
+function renderStopManager() {
+  const query = normalizeSearchText(stopSearch.value);
+  const matchingGroups = availableGroups.filter(
+    (group) => !query || groupSearchText(group).includes(query),
+  );
+  const visibleGroups = matchingGroups.slice(0, MAX_MANAGER_RESULTS);
+
+  if (catalogLoadError) {
+    stopManagerStatus.textContent = catalogLoadError;
+  } else if (!matchingGroups.length) {
+    stopManagerStatus.textContent = "Nie znaleziono takiego przystanku.";
+  } else if (matchingGroups.length > visibleGroups.length) {
+    stopManagerStatus.textContent = `Znaleziono ${matchingGroups.length} zespołów. Wpisz nazwę, aby zawęzić wyniki.`;
+  } else {
+    stopManagerStatus.textContent = `${matchingGroups.length} ${matchingGroups.length === 1 ? "zespół" : "zespołów przystankowych"}`;
+  }
+
+  stopManagerList.innerHTML = visibleGroups
+    .map((group) => {
+      const isSelected = selectedGroupIds.includes(group.id);
+      return `
+        <li class="stop-manager-item">
+          <div>
+            <strong>${escapeHtml(group.label)}</strong>
+            <span>${escapeHtml(group.note)} · ${formatStopCount(group.stops.length)}</span>
+          </div>
+          <button
+            class="toggle-stop-button ${isSelected ? "is-selected" : ""}"
+            type="button"
+            data-toggle-stop-group="${group.id}"
+            aria-pressed="${isSelected}"
+          >
+            ${isSelected ? "Usuń" : "Dodaj"}
+          </button>
+        </li>
+      `;
+    })
+    .join("");
+}
+
+function openStopManager() {
+  renderStopManager();
+  stopManagerDialog.showModal();
+  stopSearch.focus();
+}
+
 async function fetchStop(stop) {
   const response = await fetch(stop.endpoint, { cache: "no-store" });
-
   if (!response.ok) {
     throw new Error(`Nie udało się pobrać danych dla ${stop.label}.`);
   }
@@ -168,15 +334,12 @@ function minutesUntil(date) {
 
 function formatDepartureTime(departure) {
   const minutes = minutesUntil(departureDate(departure));
-
   if (minutes <= 0) {
     return "teraz";
   }
-
   if (minutes < 60) {
     return `${minutes} min`;
   }
-
   return formatter.format(new Date(departureDate(departure)));
 }
 
@@ -191,13 +354,17 @@ function formatDelay(seconds) {
 
 function renderStop(stop, data) {
   const list = document.querySelector(`#departures-${stop.id}`);
+  if (!list) {
+    return;
+  }
+
   const upcoming = data.departures
     .filter((departure) => minutesUntil(departureDate(departure)) >= -1)
     .sort((a, b) => new Date(departureDate(a)).getTime() - new Date(departureDate(b)).getTime())
     .slice(0, 8);
 
   if (!upcoming.length) {
-    list.innerHTML = `<li class="empty-state">Brak najbliższych odjazdów.</li>`;
+    list.innerHTML = '<li class="empty-state">Brak najbliższych odjazdów.</li>';
     return;
   }
 
@@ -206,6 +373,10 @@ function renderStop(stop, data) {
 
 function renderStopError(stop, error) {
   const list = document.querySelector(`#departures-${stop.id}`);
+  if (!list) {
+    return;
+  }
+
   list.innerHTML = `
     <li class="empty-state error-state">
       ${escapeHtml(error.message || `Nie udało się pobrać danych dla ${stop.label}.`)}
@@ -247,9 +418,12 @@ function escapeHtml(value) {
 }
 
 async function refreshDepartures(groupId = activeGroupId) {
-  const group = STOP_GROUPS.find((candidate) => candidate.id === groupId) ?? STOP_GROUPS[0];
-  const isCurrentGroup = () => group.id === activeGroupId;
+  const group = stopGroups.find((candidate) => candidate.id === groupId);
+  if (!group) {
+    return;
+  }
 
+  const requestId = ++refreshRequestId;
   refreshButton.classList.add("is-loading");
   refreshButton.disabled = true;
   statusText.textContent = "Odświeżanie...";
@@ -258,6 +432,10 @@ async function refreshDepartures(groupId = activeGroupId) {
     group.stops.map(async (stop) => [stop, await fetchStop(stop)]),
   );
 
+  if (requestId !== refreshRequestId) {
+    return;
+  }
+
   const successfulUpdates = [];
   let failures = 0;
 
@@ -265,7 +443,6 @@ async function refreshDepartures(groupId = activeGroupId) {
     if (result.status === "fulfilled") {
       const [stop, data] = result.value;
       renderStop(stop, data);
-
       const lastUpdate = new Date(data.lastUpdate).getTime();
       if (Number.isFinite(lastUpdate)) {
         successfulUpdates.push(lastUpdate);
@@ -277,12 +454,11 @@ async function refreshDepartures(groupId = activeGroupId) {
     renderStopError(group.stops[index], result.reason);
   });
 
-  if (!isCurrentGroup()) {
+  if (group.id !== activeGroupId) {
     return;
   }
 
   const newestUpdate = successfulUpdates.sort((a, b) => b - a)[0];
-
   if (failures === group.stops.length) {
     statusText.textContent = "Nie udało się pobrać odjazdów.";
     updatedText.textContent = "Spróbuj odświeżyć";
@@ -295,19 +471,75 @@ async function refreshDepartures(groupId = activeGroupId) {
   refreshButton.disabled = false;
 }
 
-renderShell();
-refreshButton.addEventListener("click", () => refreshDepartures());
-refreshDepartures();
-setInterval(() => refreshDepartures(), 30000);
+function registerEventListeners() {
+  stopTabs.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-stop-group]");
+    if (button) {
+      const group = selectGroup(button.dataset.stopGroup);
+      refreshDepartures(group.id);
+    }
+  });
+
+  stopPanels.addEventListener("click", (event) => {
+    if (event.target.closest("[data-open-stop-manager]")) {
+      openStopManager();
+    }
+  });
+
+  refreshButton.addEventListener("click", () => refreshDepartures());
+  manageStopsButton.addEventListener("click", openStopManager);
+  stopSearch.addEventListener("input", renderStopManager);
+  stopManagerList.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-toggle-stop-group]");
+    if (button) {
+      toggleGroup(button.dataset.toggleStopGroup);
+    }
+  });
+  stopManagerDialog.addEventListener("click", (event) => {
+    if (event.target === stopManagerDialog) {
+      stopManagerDialog.close();
+    }
+  });
+}
+
+async function initialize() {
+  registerEventListeners();
+
+  try {
+    availableGroups = mergeDefaultAndCatalogGroups(
+      DEFAULT_STOP_GROUPS,
+      await loadStopCatalog(),
+    );
+  } catch (error) {
+    catalogLoadError = "Pełna lista przystanków jest chwilowo niedostępna. Nadal możesz używać Opackiej i Płowców.";
+    console.error("Nie udało się wczytać katalogu przystanków.", error);
+  }
+
+  availableGroupsById = new Map(availableGroups.map((group) => [group.id, group]));
+  selectedGroupIds = getSavedGroupIds();
+  stopGroups = resolveSelectedGroups(selectedGroupIds);
+  activeGroupId = getInitialGroupId();
+  renderShell();
+  renderStopManager();
+
+  if (activeGroupId) {
+    refreshDepartures();
+  }
+}
+
+initialize();
+setInterval(() => {
+  if (activeGroupId) {
+    refreshDepartures();
+  }
+}, 30000);
 
 if ("serviceWorker" in navigator) {
   let isReloadingForNewServiceWorker = false;
-
   navigator.serviceWorker.addEventListener("controllerchange", () => {
     if (isReloadingForNewServiceWorker) {
       return;
     }
-
     isReloadingForNewServiceWorker = true;
     window.location.reload();
   });
@@ -316,13 +548,11 @@ if ("serviceWorker" in navigator) {
     .register("sw.js")
     .then((registration) => {
       registration.update().catch(() => {});
-
       registration.addEventListener("updatefound", () => {
         const newWorker = registration.installing;
         if (!newWorker) {
           return;
         }
-
         newWorker.addEventListener("statechange", () => {
           if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
             newWorker.postMessage({ type: "SKIP_WAITING" });

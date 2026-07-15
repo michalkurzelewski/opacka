@@ -18,11 +18,18 @@
           <h1 id="currentStopTitle">Odjazdy</h1>
           <p class="topbar-note" id="currentStopNote"></p>
         </div>
-        <button class="icon-button" id="refreshButton" type="button" aria-label="Odśwież odjazdy" title="Odśwież">
-          <svg aria-hidden="true" viewBox="0 0 24 24">
-            <path d="M20 11a8.1 8.1 0 0 0-15.5-2M4 5v4h4M4 13a8.1 8.1 0 0 0 15.5 2M20 19v-4h-4"></path>
-          </svg>
-        </button>
+        <div class="topbar-actions">
+          <button class="icon-button" id="manageStopsButton" type="button" aria-label="Zarządzaj przystankami" title="Moje przystanki">
+            <svg aria-hidden="true" viewBox="0 0 24 24">
+              <path d="M12 5v14M5 12h14"></path>
+            </svg>
+          </button>
+          <button class="icon-button" id="refreshButton" type="button" aria-label="Odśwież odjazdy" title="Odśwież">
+            <svg aria-hidden="true" viewBox="0 0 24 24">
+              <path d="M20 11a8.1 8.1 0 0 0-15.5-2M4 5v4h4M4 13a8.1 8.1 0 0 0 15.5 2M20 19v-4h-4"></path>
+            </svg>
+          </button>
+        </div>
       </header>
 
       <section class="status-strip" aria-live="polite">
@@ -34,6 +41,22 @@
 
       <div id="stopPanels"></div>
     </main>
+
+    <dialog class="stop-manager" id="stopManagerDialog" aria-labelledby="stopManagerTitle">
+      <div class="stop-manager-header">
+        <div>
+          <p class="eyebrow">Ustawienia</p>
+          <h2 id="stopManagerTitle">Moje przystanki</h2>
+        </div>
+        <form method="dialog">
+          <button class="dialog-close-button" type="submit" aria-label="Zamknij">×</button>
+        </form>
+      </div>
+      <label class="stop-search-label" for="stopSearch">Wyszukaj nazwę lub numer słupka</label>
+      <input class="stop-search" id="stopSearch" type="search" placeholder="np. Oliwa albo 2048" autocomplete="off">
+      <p class="stop-manager-status" id="stopManagerStatus" aria-live="polite"></p>
+      <ul class="stop-manager-list" id="stopManagerList"></ul>
+    </dialog>
 
     <script src="app.js" type="module"></script>
   </body>

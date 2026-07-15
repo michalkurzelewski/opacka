@@ -2,6 +2,6 @@
 
 Mała aplikacja PWA do szybkiego sprawdzania odjazdów z wybranych przystanków w Gdańsku.
 
-Aktualnie skonfigurowane są zakładki dla przystanków Opacka i Płowce.
+Przy pierwszym uruchomieniu skonfigurowane są zakładki dla przystanków Opacka i Płowce. Kolejne zespoły przystankowe można wyszukać i dodać przyciskiem „Moje przystanki”; wybór jest przechowywany lokalnie w przeglądarce.
 
 Źródło danych: `https://ckan2.multimediagdansk.pl/departures`.

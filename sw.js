@@ -1,10 +1,12 @@
-const CACHE_NAME = "opacka-v3";
+const CACHE_NAME = "opacka-v4";
 const CACHE_PREFIX = "opacka-";
 const APP_FILES = [
   "./",
   "./index.html",
   "./styles.css",
   "./app.js",
+  "./stop-preferences.mjs",
+  "./stops.json",
   "./manifest.webmanifest",
   "./icon.svg",
 ];

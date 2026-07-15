@@ -16,10 +16,12 @@ Mała statyczna aplikacja webowa/PWA do sprawdzania odjazdów z kilku ulubionych
 ## Architektura
 
 - Bez bundlera i backendu: czysty `index.html`, `styles.css`, `app.js`.
-- `app.js` ma główną konfigurację `STOP_GROUPS`.
-- Każdy element `STOP_GROUPS` to zakładka dla jednego zespołu przystanków.
+- `app.js` ma domyślną konfigurację `DEFAULT_STOP_GROUPS` oraz wczytuje pełny katalog ze `stops.json`.
+- Każdy element listy wybranych grup to zakładka dla jednego zespołu przystanków.
 - Wewnątrz zakładki są słupki z osobnymi endpointami `departures?stopId=...`.
 - Service worker cache'uje tylko pliki aplikacji, nie cache'uje odpowiedzi API ZTM.
+- `stop-preferences.mjs` zawiera testowalną logikę odczytu wyboru użytkownika i normalizacji wyszukiwania.
+- `scripts/update-stops-snapshot.mjs` generuje statyczny katalog; uruchamiać go świadomie, gdy zostanie ustalona polityka aktualizacji. Po zmianie snapshotu trzeba też podbić `CACHE_NAME` w `sw.js`, aby zainstalowane PWA pobrały nową wersję.
 
 ## Źródło danych
 
@@ -57,6 +59,7 @@ Opacka:
 
 - `2048` - Opacka 02; kierunki m.in. centrum/Wrzeszcz.
 - `2047` - Opacka; kierunki m.in. Jelitkowo/Zaspa.
+- `1665`, `1666` - słupki autobusowe Opacka, dołączane do domyślnej grupy ze snapshotu.
 
 Płowce:
 
@@ -64,6 +67,14 @@ Płowce:
 - `1331` - Płowce 02; kierunki m.in. Jasień PKM / Oliwa / Port Lotniczy.
 
 Źródło dla Płowce: strona ZTM zespołu przystanków `https://ztm.gda.pl/rozklady/przystanek-264.html` oraz linki użytkownika do linii 130 z dnia 2026-05-20.
+
+## Własne przystanki użytkownika
+
+- Przy pierwszym uruchomieniu wybrane są Opacka i Płowce.
+- Identyfikatory wybranych zespołów są zapisane w `localStorage` pod kluczem `selectedStopGroups`.
+- Użytkownik może wyszukiwać zespoły po nazwie, strefie lub numerze słupka oraz dodawać i usuwać zakładki.
+- Snapshot `stops.json` został wygenerowany 2026-07-15 z oficjalnego zasobu „Lista przystanków ZTM w Gdańsku”.
+- Konfiguracja jest lokalna dla przeglądarki i nie synchronizuje się między urządzeniami.
 
 ## UX notatki
 

@@ -17,6 +17,9 @@ Użytkownik otwiera skrót na telefonie, najlepiej z ekranu głównego, wybiera 
 - Automatyczne odświeżanie danych co około 30 sekund.
 - Widok zoptymalizowany na telefon.
 - Możliwość dodania na ekran główny telefonu jako PWA.
+- Wyszukiwanie i dodawanie własnych zespołów przystankowych jako zakładek.
+- Usuwanie niepotrzebnych zakładek; wybór jest zapisywany lokalnie w danej przeglądarce.
+- Opacka i Płowce są dodawane domyślnie przy pierwszym uruchomieniu.
 
 ## Dane źródłowe
 
@@ -32,6 +35,7 @@ Opacka:
 
 - `2047` - Opacka, kierunek m.in. Jelitkowo/Zaspa.
 - `2048` - Opacka 02, kierunek m.in. centrum/Wrzeszcz.
+- `1665` i `1666` - słupki autobusowe Opacka, dołączane z pełnego katalogu ZTM.
 
 Płowce:
 
@@ -52,3 +56,6 @@ Status z 2026-05-20: aplikacja jest opublikowana pod adresem `https://michalkurz
 - Aplikacja nie potrzebuje backendu.
 - Dane pobieramy z oficjalnego API `ckan2.multimediagdansk.pl/departures`.
 - Przystanki są grupowane jako zakładki, a słupki przystankowe jako panele wewnątrz aktywnej zakładki.
+- Pełna lista dostępna w wyszukiwarce jest statycznym snapshotem oficjalnej listy ZTM zapisanym w `stops.json`.
+- Ustawienia użytkownika zapisujemy w `localStorage`; nie są synchronizowane między urządzeniami.
+- Automatycznie odświeżamy wyłącznie przystanki należące do aktualnie otwartej zakładki.
