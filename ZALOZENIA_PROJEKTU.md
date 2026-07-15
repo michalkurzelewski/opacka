@@ -20,8 +20,9 @@ Użytkownik otwiera skrót na telefonie, najlepiej z ekranu głównego, wybiera 
 - Wyszukiwanie i dodawanie własnych zespołów przystankowych jako zakładek.
 - Usuwanie niepotrzebnych zakładek; wybór jest zapisywany lokalnie w danej przeglądarce.
 - Opacka i Płowce są dodawane domyślnie przy pierwszym uruchomieniu.
-- Każdy słupek można zwinąć, przesunąć wcześniej lub później w zakładce i nadać mu własny alias.
-- Alias, kolejność i stan zwinięcia są zapamiętywane lokalnie; zwinięte słupki nie są odpytywane o odjazdy.
+- Ponowne naciśnięcie aktywnej zakładki otwiera osobny formularz edycji jej słupków.
+- W formularzu można zmieniać kolejność przez przeciąganie lub przyciski, ukrywać słupki oraz nadawać im własne aliasy.
+- Alias, kolejność i widoczność są zapamiętywane lokalnie; ukryte słupki nie pojawiają się na ekranie głównym i nie są odpytywane o odjazdy.
 
 ## Dane źródłowe
 
@@ -64,3 +65,4 @@ Status z 2026-05-20: aplikacja jest opublikowana pod adresem `https://michalkurz
 - W nagłówku słupka pokazujemy tylko jego nazwę albo alias; dodatkowe opisy typu „Słupek” i „Najbliższe odjazdy” zostały usunięte.
 - Po pobraniu odjazdów górny obszar aplikacji zawiera wyłącznie czas pochodzenia ostatnich poprawnych danych i przycisk odświeżania; przed pierwszym poprawnym pobraniem pokazuje zwięzły stan braku lub pobierania danych. Nazwa aktywnego przystanku jest widoczna w zakładce.
 - Zakładki pokazują same nazwy zespołów przystanków, a przycisk dodawania znajduje się bezpośrednio za ostatnią zakładką.
+- Główny ekran nie zawiera kontrolek edycji słupków. Edytor zakładki pozwala również usunąć cały przystanek po dodatkowym potwierdzeniu; usuwanie pozostaje dostępne także w oknie „Moje przystanki”.

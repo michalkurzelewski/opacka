@@ -1,12 +1,12 @@
 import {
   mergeDefaultAndCatalogGroups,
-  moveStop,
   normalizeSearchText,
   orderStops,
   parseGroupSelection,
   parseStopSettings,
   SELECTED_GROUPS_STORAGE_KEY,
   STOP_SETTINGS_STORAGE_KEY,
+  updateGroupStopSettings,
 } from "./stop-preferences.mjs";
 
 const DEPARTURES_ENDPOINT = "https://ckan2.multimediagdansk.pl/departures?stopId=";
@@ -61,12 +61,17 @@ const stopManagerDialog = document.querySelector("#stopManagerDialog");
 const stopSearch = document.querySelector("#stopSearch");
 const stopManagerStatus = document.querySelector("#stopManagerStatus");
 const stopManagerList = document.querySelector("#stopManagerList");
-const aliasDialog = document.querySelector("#aliasDialog");
-const aliasForm = document.querySelector("#aliasForm");
-const aliasStopName = document.querySelector("#aliasStopName");
-const aliasInput = document.querySelector("#aliasInput");
-const removeAliasButton = document.querySelector("#removeAliasButton");
-const closeAliasButton = document.querySelector("#closeAliasButton");
+const stopEditorDialog = document.querySelector("#stopEditorDialog");
+const stopEditorForm = document.querySelector("#stopEditorForm");
+const stopEditorTitle = document.querySelector("#stopEditorTitle");
+const stopEditorList = document.querySelector("#stopEditorList");
+const closeStopEditorButton = document.querySelector("#closeStopEditorButton");
+const cancelStopEditorButton = document.querySelector("#cancelStopEditorButton");
+const deleteStopGroupButton = document.querySelector("#deleteStopGroupButton");
+const deleteStopGroupConfirmation = document.querySelector("#deleteStopGroupConfirmation");
+const deleteStopGroupMessage = document.querySelector("#deleteStopGroupMessage");
+const cancelDeleteStopGroupButton = document.querySelector("#cancelDeleteStopGroupButton");
+const confirmDeleteStopGroupButton = document.querySelector("#confirmDeleteStopGroupButton");
 const formatter = new Intl.DateTimeFormat("pl-PL", {
   hour: "2-digit",
   minute: "2-digit",
@@ -82,7 +87,8 @@ let catalogLoadError = "";
 let refreshRequestId = 0;
 const latestUpdateByGroupId = new Map();
 let stopSettings = parseStopSettings(null);
-let editedStop = null;
+let editedGroupId = null;
+let draggedStopEditorItem = null;
 
 function normalizeCatalogGroup(group) {
   return {
@@ -185,16 +191,25 @@ function renderShell() {
 
   stopPanels.innerHTML = stopGroups
     .map(
-      (group) => `
+      (group) => {
+        const visibleStops = group.stops.filter(
+          (stop) => !isStopHidden({ groupId: group.id, stopId: stop.id }),
+        );
+        return `
         <section
           class="departures stop-tab-panel"
           id="panel-${group.id}"
           role="tabpanel"
           aria-labelledby="tab-${group.id}"
         >
-          ${group.stops.map((stop, index) => renderStopPanel(group, stop, index)).join("")}
+          ${
+            visibleStops.length
+              ? visibleStops.map((stop) => renderStopPanel(group, stop)).join("")
+              : '<p class="no-visible-stops">Brak widocznych słupków. Naciśnij aktywną zakładkę ponownie, aby je przywrócić.</p>'
+          }
         </section>
-      `,
+      `;
+      },
     )
     .join("");
 
@@ -213,76 +228,23 @@ function stopSettingsKey(stopReference) {
   return `${stopReference.groupId}:${stopReference.stopId}`;
 }
 
-function isStopCollapsed(stopReference) {
+function isStopHidden(stopReference) {
   return stopSettings.collapsed.includes(stopSettingsKey(stopReference));
 }
 
-function renderStopPanel(group, stop, index) {
+function renderStopPanel(group, stop) {
   const stopReference = { groupId: group.id, stopId: stop.id };
   const preferenceKey = stopSettingsKey(stopReference);
-  const isCollapsed = stopSettings.collapsed.includes(preferenceKey);
   const alias = stopSettings.aliases[preferenceKey];
   const displayLabel = alias || stop.label;
   const originalNameTitle = alias ? ` title="Oryginalna nazwa: ${escapeHtml(stop.label)}"` : "";
 
   return `
-    <article class="stop-panel ${isCollapsed ? "is-collapsed" : ""}" data-stop-card="${escapeHtml(stop.id)}">
+    <article class="stop-panel" data-stop-card="${escapeHtml(stop.id)}">
       <div class="stop-heading">
-        <button
-          class="stop-title-button"
-          type="button"
-          data-toggle-stop-details
-          data-group-id="${group.id}"
-          data-stop-id="${escapeHtml(stop.id)}"
-          aria-expanded="${!isCollapsed}"
-          title="${isCollapsed ? "Rozwiń" : "Zwiń"} ${escapeHtml(displayLabel)}"
-        >
-          <svg class="collapse-chevron" aria-hidden="true" viewBox="0 0 24 24">
-            <path d="m7 10 5 5 5-5"></path>
-          </svg>
-          <span${originalNameTitle}>${escapeHtml(displayLabel)}</span>
-        </button>
-        <div class="stop-card-actions">
-          <button
-            class="stop-action-button"
-            type="button"
-            data-move-stop="earlier"
-            data-group-id="${group.id}"
-            data-stop-id="${escapeHtml(stop.id)}"
-            aria-label="Przesuń ${escapeHtml(displayLabel)} wcześniej"
-            title="Przesuń wcześniej"
-            ${index === 0 ? "disabled" : ""}
-          >
-            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m7 14 5-5 5 5"></path></svg>
-          </button>
-          <button
-            class="stop-action-button"
-            type="button"
-            data-move-stop="later"
-            data-group-id="${group.id}"
-            data-stop-id="${escapeHtml(stop.id)}"
-            aria-label="Przesuń ${escapeHtml(displayLabel)} później"
-            title="Przesuń później"
-            ${index === group.stops.length - 1 ? "disabled" : ""}
-          >
-            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m7 10 5 5 5-5"></path></svg>
-          </button>
-          <button
-            class="stop-action-button ${alias ? "has-alias" : ""}"
-            type="button"
-            data-edit-stop-alias
-            data-group-id="${group.id}"
-            data-stop-id="${escapeHtml(stop.id)}"
-            aria-label="Zmień nazwę ${escapeHtml(stop.label)}"
-            title="Nadaj alias"
-          >
-            <svg aria-hidden="true" viewBox="0 0 24 24">
-              <path d="M4 20h4l11-11-4-4L4 16v4ZM13.5 6.5l4 4"></path>
-            </svg>
-          </button>
-        </div>
+        <h2 class="stop-title"${originalNameTitle}>${escapeHtml(displayLabel)}</h2>
       </div>
-      <div class="stop-details" ${isCollapsed ? "hidden" : ""}>
+      <div class="stop-details">
         <ul class="departure-list" id="departures-${escapeHtml(stop.id)}">
           <li class="empty-state">Ładowanie odjazdów...</li>
         </ul>
@@ -304,9 +266,20 @@ function selectGroup(groupId, options = {}) {
 
   stopTabs.querySelectorAll("[data-stop-group]").forEach((button) => {
     const isSelected = button.dataset.stopGroup === group.id;
+    const buttonGroup = stopGroups.find(
+      (candidate) => candidate.id === button.dataset.stopGroup,
+    );
+    const buttonLabel = buttonGroup?.label || button.textContent.trim();
     button.classList.toggle("is-active", isSelected);
     button.setAttribute("aria-selected", String(isSelected));
     button.setAttribute("tabindex", isSelected ? "0" : "-1");
+    button.setAttribute(
+      "aria-label",
+      isSelected
+        ? `${buttonLabel}, aktywna. Naciśnij ponownie, aby edytować.`
+        : buttonLabel,
+    );
+    button.title = isSelected ? "Naciśnij ponownie, aby edytować" : "";
   });
 
   stopPanels.querySelectorAll(".stop-tab-panel").forEach((panel) => {
@@ -346,71 +319,127 @@ function persistStopSettingsAndRefresh() {
   }
 }
 
-function toggleStopDetails(stopReference) {
-  const preferenceKey = stopSettingsKey(stopReference);
-  const collapsed = new Set(stopSettings.collapsed);
-
-  if (collapsed.has(preferenceKey)) {
-    collapsed.delete(preferenceKey);
-  } else {
-    collapsed.add(preferenceKey);
-  }
-
-  stopSettings = { ...stopSettings, collapsed: [...collapsed] };
-  persistStopSettingsAndRefresh();
+function visibilityIcon(isHidden) {
+  return `
+    <svg aria-hidden="true" viewBox="0 0 24 24">
+      <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"></path>
+      <circle cx="12" cy="12" r="2.5"></circle>
+      ${isHidden ? '<path d="m4 4 16 16"></path>' : ""}
+    </svg>
+  `;
 }
 
-function reorderStop(stopReference, direction) {
-  const group = stopGroups.find((candidate) => candidate.id === stopReference.groupId);
+function renderStopEditorItem(group, stop) {
+  const preferenceKey = stopSettingsKey({ groupId: group.id, stopId: stop.id });
+  const isHidden = stopSettings.collapsed.includes(preferenceKey);
+  const alias = stopSettings.aliases[preferenceKey] || "";
+
+  return `
+    <li class="stop-editor-item ${isHidden ? "is-hidden" : ""}" data-stop-editor-id="${escapeHtml(stop.id)}">
+      <div class="stop-editor-move-controls">
+        <span class="drag-handle" draggable="true" title="Przeciągnij, aby zmienić kolejność" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M8 7h8M8 12h8M8 17h8"></path></svg>
+        </span>
+        <button class="editor-icon-button" type="button" data-editor-move="earlier" aria-label="Przesuń ${escapeHtml(stop.label)} wcześniej" title="Przesuń wcześniej">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m7 14 5-5 5 5"></path></svg>
+        </button>
+        <button class="editor-icon-button" type="button" data-editor-move="later" aria-label="Przesuń ${escapeHtml(stop.label)} później" title="Przesuń później">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m7 10 5 5 5-5"></path></svg>
+        </button>
+      </div>
+      <label class="stop-editor-name">
+        <span>${escapeHtml(stop.label)}</span>
+        <input type="text" maxlength="40" value="${escapeHtml(alias)}" placeholder="Bez aliasu" data-stop-editor-alias autocomplete="off">
+      </label>
+      <button
+        class="editor-icon-button visibility-button"
+        type="button"
+        data-toggle-editor-visibility
+        aria-pressed="${isHidden}"
+        aria-label="${isHidden ? "Pokaż" : "Ukryj"} ${escapeHtml(stop.label)}"
+        title="${isHidden ? "Pokaż słupek" : "Ukryj słupek"}"
+      >
+        ${visibilityIcon(isHidden)}
+      </button>
+    </li>
+  `;
+}
+
+function updateStopEditorMoveButtons() {
+  const items = [...stopEditorList.querySelectorAll("[data-stop-editor-id]")];
+  items.forEach((item, index) => {
+    item.querySelector('[data-editor-move="earlier"]').disabled = index === 0;
+    item.querySelector('[data-editor-move="later"]').disabled = index === items.length - 1;
+  });
+}
+
+function resetDeleteStopGroupConfirmation() {
+  deleteStopGroupButton.hidden = false;
+  deleteStopGroupConfirmation.hidden = true;
+}
+
+function openStopEditor(groupId) {
+  const group = stopGroups.find((candidate) => candidate.id === groupId);
   if (!group) {
     return;
   }
 
-  stopSettings = {
-    ...stopSettings,
-    order: {
-      ...stopSettings.order,
-      [stopReference.groupId]: moveStop(group.stops, stopReference.stopId, direction),
-    },
-  };
-  persistStopSettingsAndRefresh();
+  editedGroupId = group.id;
+  stopEditorTitle.textContent = `Edytuj: ${group.label}`;
+  stopEditorList.innerHTML = group.stops.map((stop) => renderStopEditorItem(group, stop)).join("");
+  deleteStopGroupButton.textContent = `Usuń ${group.label} z moich przystanków`;
+  deleteStopGroupMessage.textContent = `Czy na pewno chcesz usunąć ${group.label} z zakładek?`;
+  resetDeleteStopGroupConfirmation();
+  updateStopEditorMoveButtons();
+  stopEditorDialog.showModal();
 }
 
-function openAliasEditor(stopReference) {
-  const group = stopGroups.find((candidate) => candidate.id === stopReference.groupId);
-  const stop = group?.stops.find((candidate) => candidate.id === stopReference.stopId);
-  if (!stop) {
+function moveStopEditorItem(button, direction) {
+  const item = button.closest("[data-stop-editor-id]");
+  const sibling = direction === "earlier" ? item.previousElementSibling : item.nextElementSibling;
+  if (!sibling) {
     return;
   }
 
-  const preferenceKey = stopSettingsKey(stopReference);
-  editedStop = stopReference;
-  aliasStopName.textContent = stop.label;
-  aliasInput.value = stopSettings.aliases[preferenceKey] || "";
-  removeAliasButton.hidden = !stopSettings.aliases[preferenceKey];
-  aliasDialog.showModal();
-  aliasInput.focus();
-  aliasInput.select();
-}
-
-function setEditedStopAlias(value) {
-  if (!editedStop) {
-    return;
-  }
-
-  const preferenceKey = stopSettingsKey(editedStop);
-  const aliases = { ...stopSettings.aliases };
-  const alias = value.trim();
-
-  if (alias) {
-    aliases[preferenceKey] = alias;
+  if (direction === "earlier") {
+    stopEditorList.insertBefore(item, sibling);
   } else {
-    delete aliases[preferenceKey];
+    stopEditorList.insertBefore(sibling, item);
+  }
+  updateStopEditorMoveButtons();
+}
+
+function toggleStopEditorVisibility(button) {
+  const item = button.closest("[data-stop-editor-id]");
+  const isHidden = !item.classList.contains("is-hidden");
+  const group = stopGroups.find((candidate) => candidate.id === editedGroupId);
+  const stop = group?.stops.find((candidate) => candidate.id === item.dataset.stopEditorId);
+
+  item.classList.toggle("is-hidden", isHidden);
+  button.setAttribute("aria-pressed", String(isHidden));
+  button.setAttribute("aria-label", `${isHidden ? "Pokaż" : "Ukryj"} ${stop?.label || "słupek"}`);
+  button.title = isHidden ? "Pokaż słupek" : "Ukryj słupek";
+  button.innerHTML = visibilityIcon(isHidden);
+}
+
+function saveStopEditor() {
+  if (!editedGroupId) {
+    return;
   }
 
-  stopSettings = { ...stopSettings, aliases };
-  editedStop = null;
-  aliasDialog.close();
+  const items = [...stopEditorList.querySelectorAll("[data-stop-editor-id]")];
+  const draft = {
+    aliases: Object.fromEntries(
+      items.map((item) => [item.dataset.stopEditorId, item.querySelector("[data-stop-editor-alias]").value]),
+    ),
+    hiddenStopIds: items
+      .filter((item) => item.classList.contains("is-hidden"))
+      .map((item) => item.dataset.stopEditorId),
+    order: items.map((item) => item.dataset.stopEditorId),
+  };
+
+  stopSettings = updateGroupStopSettings(stopSettings, editedGroupId, draft);
+  stopEditorDialog.close();
   persistStopSettingsAndRefresh();
 }
 
@@ -590,7 +619,7 @@ async function refreshDepartures(groupId = activeGroupId) {
   }
 
   const visibleStops = group.stops.filter(
-    (stop) => !isStopCollapsed({ groupId: group.id, stopId: stop.id }),
+    (stop) => !isStopHidden({ groupId: group.id, stopId: stop.id }),
   );
   if (!visibleStops.length) {
     refreshRequestId += 1;
@@ -647,13 +676,6 @@ async function refreshDepartures(groupId = activeGroupId) {
   refreshButton.disabled = false;
 }
 
-function stopReferenceFromElement(element) {
-  return {
-    groupId: element.dataset.groupId,
-    stopId: element.dataset.stopId,
-  };
-}
-
 function openStopManagerFromEvent(event) {
   if (!event.target.closest("[data-open-stop-manager]")) {
     return false;
@@ -671,32 +693,18 @@ function registerEventListeners() {
 
     const button = event.target.closest("[data-stop-group]");
     if (button) {
+      if (button.dataset.stopGroup === activeGroupId) {
+        openStopEditor(activeGroupId);
+        return;
+      }
+
       const group = selectGroup(button.dataset.stopGroup);
       refreshDepartures(group.id);
     }
   });
 
   stopPanels.addEventListener("click", (event) => {
-    if (openStopManagerFromEvent(event)) {
-      return;
-    }
-
-    const toggleButton = event.target.closest("[data-toggle-stop-details]");
-    if (toggleButton) {
-      toggleStopDetails(stopReferenceFromElement(toggleButton));
-      return;
-    }
-
-    const moveButton = event.target.closest("[data-move-stop]");
-    if (moveButton) {
-      reorderStop(stopReferenceFromElement(moveButton), moveButton.dataset.moveStop);
-      return;
-    }
-
-    const aliasButton = event.target.closest("[data-edit-stop-alias]");
-    if (aliasButton) {
-      openAliasEditor(stopReferenceFromElement(aliasButton));
-    }
+    openStopManagerFromEvent(event);
   });
 
   refreshButton.addEventListener("click", () => refreshDepartures());
@@ -712,19 +720,78 @@ function registerEventListeners() {
       stopManagerDialog.close();
     }
   });
-  aliasForm.addEventListener("submit", (event) => {
+  stopEditorForm.addEventListener("submit", (event) => {
     event.preventDefault();
-    setEditedStopAlias(aliasInput.value);
+    saveStopEditor();
   });
-  removeAliasButton.addEventListener("click", () => setEditedStopAlias(""));
-  closeAliasButton.addEventListener("click", () => aliasDialog.close());
-  aliasDialog.addEventListener("click", (event) => {
-    if (event.target === aliasDialog) {
-      aliasDialog.close();
+  stopEditorList.addEventListener("click", (event) => {
+    const moveButton = event.target.closest("[data-editor-move]");
+    if (moveButton) {
+      moveStopEditorItem(moveButton, moveButton.dataset.editorMove);
+      return;
+    }
+
+    const visibilityButton = event.target.closest("[data-toggle-editor-visibility]");
+    if (visibilityButton) {
+      toggleStopEditorVisibility(visibilityButton);
     }
   });
-  aliasDialog.addEventListener("close", () => {
-    editedStop = null;
+  stopEditorList.addEventListener("dragstart", (event) => {
+    const handle = event.target.closest(".drag-handle");
+    if (!handle) {
+      return;
+    }
+
+    draggedStopEditorItem = handle.closest("[data-stop-editor-id]");
+    draggedStopEditorItem.classList.add("is-dragging");
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", draggedStopEditorItem.dataset.stopEditorId);
+  });
+  stopEditorList.addEventListener("dragover", (event) => {
+    const targetItem = event.target.closest("[data-stop-editor-id]");
+    if (!draggedStopEditorItem || !targetItem || targetItem === draggedStopEditorItem) {
+      return;
+    }
+
+    event.preventDefault();
+    const bounds = targetItem.getBoundingClientRect();
+    const insertAfter = event.clientY > bounds.top + bounds.height / 2;
+    stopEditorList.insertBefore(
+      draggedStopEditorItem,
+      insertAfter ? targetItem.nextElementSibling : targetItem,
+    );
+  });
+  stopEditorList.addEventListener("drop", (event) => {
+    event.preventDefault();
+    updateStopEditorMoveButtons();
+  });
+  stopEditorList.addEventListener("dragend", () => {
+    draggedStopEditorItem?.classList.remove("is-dragging");
+    draggedStopEditorItem = null;
+    updateStopEditorMoveButtons();
+  });
+  closeStopEditorButton.addEventListener("click", () => stopEditorDialog.close());
+  cancelStopEditorButton.addEventListener("click", () => stopEditorDialog.close());
+  deleteStopGroupButton.addEventListener("click", () => {
+    deleteStopGroupButton.hidden = true;
+    deleteStopGroupConfirmation.hidden = false;
+  });
+  cancelDeleteStopGroupButton.addEventListener("click", resetDeleteStopGroupConfirmation);
+  confirmDeleteStopGroupButton.addEventListener("click", () => {
+    const groupId = editedGroupId;
+    stopEditorDialog.close();
+    if (groupId) {
+      toggleGroup(groupId);
+    }
+  });
+  stopEditorDialog.addEventListener("click", (event) => {
+    if (event.target === stopEditorDialog) {
+      stopEditorDialog.close();
+    }
+  });
+  stopEditorDialog.addEventListener("close", () => {
+    editedGroupId = null;
+    draggedStopEditorItem = null;
   });
 }
 

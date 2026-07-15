@@ -21,7 +21,7 @@ Mała statyczna aplikacja webowa/PWA do sprawdzania odjazdów z kilku ulubionych
 - Wewnątrz zakładki są słupki z osobnymi endpointami `departures?stopId=...`.
 - Service worker cache'uje tylko pliki aplikacji, nie cache'uje odpowiedzi API ZTM.
 - `stop-preferences.mjs` zawiera testowalną logikę odczytu wyboru użytkownika i normalizacji wyszukiwania.
-- `stop-preferences.mjs` obsługuje również walidację ustawień słupków, ich zapamiętaną kolejność i bezpieczne przesuwanie.
+- `stop-preferences.mjs` obsługuje również walidację ustawień słupków oraz atomowy zapis szkicu edycji kolejności, aliasów i widoczności.
 - `scripts/update-stops-snapshot.mjs` generuje statyczny katalog; uruchamiać go świadomie, gdy zostanie ustalona polityka aktualizacji. Po zmianie snapshotu trzeba też podbić `CACHE_NAME` w `sw.js`, aby zainstalowane PWA pobrały nową wersję.
 
 ## Źródło danych
@@ -73,10 +73,12 @@ Płowce:
 
 - Przy pierwszym uruchomieniu wybrane są Opacka i Płowce.
 - Identyfikatory wybranych zespołów są zapisane w `localStorage` pod kluczem `selectedStopGroups`.
-- Aliasy słupków, stan zwinięcia i kolejność są zapisane w `localStorage` pod kluczem `stopSettings`.
+- Aliasy słupków, widoczność i kolejność są zapisane w `localStorage` pod kluczem `stopSettings`. Dla zgodności wstecznej lista ukrytych słupków nadal używa wewnętrznego pola `collapsed`.
 - Użytkownik może wyszukiwać zespoły po nazwie, strefie lub numerze słupka oraz dodawać i usuwać zakładki.
-- Użytkownik może zwinąć słupek, zmienić jego pozycję przyciskami wcześniej/później oraz nadać lub usunąć alias.
-- Automatyczne odświeżanie pomija zwinięte słupki; rozwinięcie uruchamia ponowne pobranie aktywnej zakładki.
+- Ponowne naciśnięcie aktywnej zakładki otwiera modal edycji. Zmiany kolejności, aliasów i widoczności są szkicem aż do naciśnięcia „Zapisz zmiany”.
+- Kolejność można zmieniać przyciskami lub przez HTML drag and drop; przyciski pozostają obsługiwanym wariantem mobilnym.
+- Ukryte słupki nie są renderowane na ekranie głównym ani odpytywane o odjazdy, lecz pozostają dostępne w modalnym edytorze.
+- Usunięcie całej zakładki jest dostępne zarówno w edytorze po potwierdzeniu, jak i w oknie „Moje przystanki”.
 - Snapshot `stops.json` został wygenerowany 2026-07-15 z oficjalnego zasobu „Lista przystanków ZTM w Gdańsku”.
 - Konfiguracja jest lokalna dla przeglądarki i nie synchronizuje się między urządzeniami.
 
@@ -84,6 +86,8 @@ Płowce:
 
 - Widok startowy jest użytkowy, bez landing page.
 - Górne zakładki przełączają zespół przystanków.
+- Ponowne naciśnięcie aktywnej zakładki otwiera jej edytor; dostępny opis ARIA i `title` objaśniają tę interakcję.
+- Karty słupków na ekranie głównym nie zawierają żadnych kontrolek edycji.
 - W aktywnej zakładce słupki pokazują się obok siebie na desktopie i jeden pod drugim na telefonie.
 - Odjazdy w ciągu kilku minut są wyróżnione kolorem.
 - `SCHEDULED` jest opisane jako `rozkład`, żeby było jasne, że to nie realtime.

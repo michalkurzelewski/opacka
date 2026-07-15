@@ -42,23 +42,33 @@
       <ul class="stop-manager-list" id="stopManagerList"></ul>
     </dialog>
 
-    <dialog class="alias-dialog" id="aliasDialog" aria-labelledby="aliasDialogTitle">
-      <form id="aliasForm">
+    <dialog class="stop-editor" id="stopEditorDialog" aria-labelledby="stopEditorTitle">
+      <form class="stop-editor-form" id="stopEditorForm">
         <div class="stop-manager-header">
           <div>
-            <p class="eyebrow">Nazwa słupka</p>
-            <h2 id="aliasDialogTitle">Nadaj alias</h2>
+            <p class="eyebrow">Układ przystanku</p>
+            <h2 id="stopEditorTitle">Edytuj przystanek</h2>
           </div>
-          <button class="dialog-close-button" id="closeAliasButton" type="button" aria-label="Zamknij">×</button>
+          <button class="dialog-close-button" id="closeStopEditorButton" type="button" aria-label="Zamknij bez zapisywania">×</button>
         </div>
-        <div class="alias-dialog-body">
-          <p class="alias-original-name">Oryginalna nazwa: <strong id="aliasStopName"></strong></p>
-          <label class="stop-search-label" for="aliasInput">Twój alias</label>
-          <input class="stop-search" id="aliasInput" type="text" maxlength="40" placeholder="np. Do pracy" autocomplete="off">
-          <div class="alias-dialog-actions">
-            <button class="secondary-button danger-button" id="removeAliasButton" type="button">Usuń alias</button>
-            <button class="primary-button" type="submit">Zapisz</button>
+        <div class="stop-editor-body">
+          <p class="stop-editor-intro">Przeciągnij słupki albo użyj strzałek. Przekreślone oko ukrywa słupek razem z jego odjazdami.</p>
+          <ul class="stop-editor-list" id="stopEditorList"></ul>
+          <div class="stop-editor-actions">
+            <button class="secondary-button" id="cancelStopEditorButton" type="button">Anuluj</button>
+            <button class="primary-button" type="submit">Zapisz zmiany</button>
           </div>
+          <section class="stop-editor-danger-zone" aria-labelledby="deleteStopGroupTitle">
+            <h3 id="deleteStopGroupTitle">Usuwanie przystanku</h3>
+            <button class="secondary-button danger-button" id="deleteStopGroupButton" type="button"></button>
+            <div class="delete-stop-group-confirmation" id="deleteStopGroupConfirmation" hidden>
+              <p id="deleteStopGroupMessage"></p>
+              <div>
+                <button class="secondary-button" id="cancelDeleteStopGroupButton" type="button">Anuluj</button>
+                <button class="primary-button danger-primary-button" id="confirmDeleteStopGroupButton" type="button">Usuń</button>
+              </div>
+            </div>
+          </section>
         </div>
       </form>
     </dialog>

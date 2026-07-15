@@ -3,11 +3,11 @@ import test from "node:test";
 
 import {
   mergeDefaultAndCatalogGroups,
-  moveStop,
   normalizeSearchText,
   orderStops,
   parseGroupSelection,
   parseStopSettings,
+  updateGroupStopSettings,
 } from "../stop-preferences.mjs";
 
 const availableIds = new Set(["opacka", "plowce", "ztm-a", "ztm-b"]);
@@ -91,11 +91,35 @@ test("orders known poles first and appends new catalog poles", () => {
   ]);
 });
 
-test("moves a pole without crossing group boundaries", () => {
-  const stops = [{ id: "1" }, { id: "2" }, { id: "3" }];
-  assert.deepEqual(moveStop(stops, "2", "earlier"), ["2", "1", "3"]);
-  assert.deepEqual(moveStop(stops, "2", "later"), ["1", "3", "2"]);
-  assert.deepEqual(moveStop(stops, "1", "earlier"), ["1", "2", "3"]);
-  assert.deepEqual(moveStop(stops, "3", "later"), ["1", "2", "3"]);
-  assert.deepEqual(moveStop(stops, "2", "unsupported"), ["1", "2", "3"]);
+test("updates one group's order, aliases, and hidden poles without changing other groups", () => {
+  const settings = {
+    aliases: {
+      "opacka:1": "Stary alias",
+      "plowce:9": "Dworzec",
+    },
+    collapsed: ["opacka:1", "plowce:9"],
+    order: {
+      opacka: ["1", "2"],
+      plowce: ["9"],
+    },
+  };
+
+  assert.deepEqual(
+    updateGroupStopSettings(settings, "opacka", {
+      aliases: { 1: "", 2: "Do pracy" },
+      hiddenStopIds: ["2"],
+      order: ["2", "1"],
+    }),
+    {
+      aliases: {
+        "plowce:9": "Dworzec",
+        "opacka:2": "Do pracy",
+      },
+      collapsed: ["plowce:9", "opacka:2"],
+      order: {
+        opacka: ["2", "1"],
+        plowce: ["9"],
+      },
+    },
+  );
 });

@@ -141,8 +141,8 @@ h2 {
 .toggle-stop-button:focus-visible,
 .dialog-close-button:focus-visible,
 .stop-search:focus-visible,
-.stop-title-button:focus-visible,
-.stop-action-button:focus-visible,
+.stop-editor-name input:focus-visible,
+.editor-icon-button:focus-visible,
 .secondary-button:focus-visible {
   outline: 3px solid rgba(15, 107, 85, 0.28);
   outline-offset: 2px;
@@ -205,7 +205,7 @@ h2 {
 }
 
 .stop-manager,
-.alias-dialog {
+.stop-editor {
   padding: 0;
   border: 1px solid var(--line);
   border-radius: 12px;
@@ -221,7 +221,7 @@ h2 {
 }
 
 .stop-manager::backdrop,
-.alias-dialog::backdrop {
+.stop-editor::backdrop {
   background: rgba(23, 33, 29, 0.58);
   backdrop-filter: blur(3px);
 }
@@ -327,36 +327,6 @@ h2 {
   color: var(--urgent);
 }
 
-.alias-dialog {
-  width: min(92vw, 460px);
-}
-
-.alias-dialog-body {
-  padding: 0 18px 18px;
-}
-
-.alias-original-name {
-  margin: 2px 0 16px;
-  color: var(--muted);
-  font-size: 0.88rem;
-}
-
-.alias-dialog .stop-search-label {
-  margin-inline: 0;
-}
-
-.alias-dialog .stop-search {
-  width: 100%;
-  margin-inline: 0;
-}
-
-.alias-dialog-actions {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  margin-top: 18px;
-}
-
 .secondary-button {
   padding: 9px 12px;
   border: 1px solid var(--line);
@@ -370,6 +340,183 @@ h2 {
 
 .danger-button {
   color: var(--urgent);
+}
+
+.danger-primary-button {
+  border-color: var(--urgent);
+  background: var(--urgent);
+}
+
+.stop-editor {
+  width: min(94vw, 720px);
+  max-height: min(90vh, 820px);
+  overflow: hidden;
+}
+
+.stop-editor-form {
+  display: flex;
+  max-height: min(90vh, 820px);
+  flex-direction: column;
+}
+
+.stop-editor-body {
+  padding: 0 18px 18px;
+  overflow-y: auto;
+}
+
+.stop-editor-intro {
+  margin: 0 0 14px;
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.stop-editor-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.stop-editor-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--surface-strong);
+  transition: opacity 0.15s ease, border-color 0.15s ease;
+}
+
+.stop-editor-item.is-hidden {
+  opacity: 0.56;
+}
+
+.stop-editor-item.is-dragging {
+  border-color: var(--accent);
+  opacity: 0.45;
+}
+
+.stop-editor-move-controls {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.drag-handle,
+.editor-icon-button {
+  display: inline-grid;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 auto;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--muted);
+}
+
+.drag-handle {
+  border-color: transparent;
+  cursor: grab;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+.editor-icon-button {
+  font: inherit;
+  cursor: pointer;
+}
+
+.drag-handle svg,
+.editor-icon-button svg {
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.editor-icon-button:disabled {
+  opacity: 0.28;
+  cursor: default;
+}
+
+.stop-editor-name {
+  min-width: 0;
+}
+
+.stop-editor-name span {
+  display: block;
+  margin-bottom: 4px;
+  overflow-wrap: anywhere;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.stop-editor-name input {
+  width: 100%;
+  padding: 8px 9px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.88rem;
+}
+
+.visibility-button {
+  width: 40px;
+  height: 40px;
+  color: var(--accent);
+}
+
+.stop-editor-item.is-hidden .visibility-button {
+  color: var(--urgent);
+}
+
+.stop-editor-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.stop-editor-danger-zone {
+  margin-top: 22px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.stop-editor-danger-zone h3 {
+  margin: 0 0 10px;
+  font-size: 0.92rem;
+}
+
+.delete-stop-group-confirmation {
+  padding: 12px;
+  border: 1px solid rgba(180, 50, 43, 0.3);
+  border-radius: 8px;
+  background: rgba(180, 50, 43, 0.06);
+}
+
+.delete-stop-group-confirmation p {
+  margin: 0 0 10px;
+  font-size: 0.9rem;
+}
+
+.delete-stop-group-confirmation div {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 .departures {
@@ -388,86 +535,28 @@ h2 {
 }
 
 .stop-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
   min-height: 54px;
-  padding: 8px 10px;
+  padding: 14px 12px;
   background: #1f2523;
   color: #f8f3e5;
 }
 
-.stop-title-button {
-  display: flex;
-  min-width: 0;
-  flex: 1 1 auto;
-  align-items: center;
-  gap: 7px;
-  padding: 5px 2px;
-  border: 0;
-  background: transparent;
-  color: inherit;
-  font: inherit;
+.stop-title {
+  margin: 0;
   font-size: 1rem;
   font-weight: 850;
-  text-align: left;
-  cursor: pointer;
-}
-
-.stop-title-button span {
-  min-width: 0;
   overflow-wrap: anywhere;
 }
 
-.collapse-chevron,
-.stop-action-button svg {
-  width: 20px;
-  height: 20px;
-  fill: none;
-  stroke: currentColor;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 2;
-}
-
-.collapse-chevron {
-  flex: 0 0 auto;
-  transition: transform 0.16s ease;
-}
-
-.stop-panel.is-collapsed .collapse-chevron {
-  transform: rotate(-90deg);
-}
-
-.stop-card-actions {
-  display: flex;
-  flex: 0 0 auto;
-  gap: 3px;
-}
-
-.stop-action-button {
-  display: grid;
-  width: 34px;
-  height: 34px;
-  place-items: center;
-  padding: 0;
-  border: 1px solid rgba(248, 243, 229, 0.16);
-  border-radius: 7px;
-  background: transparent;
-  color: #d9efe8;
-  cursor: pointer;
-}
-
-.stop-action-button:hover:not(:disabled),
-.stop-action-button.has-alias {
-  background: rgba(220, 238, 232, 0.14);
-  color: #fff;
-}
-
-.stop-action-button:disabled {
-  opacity: 0.25;
-  cursor: default;
+.no-visible-stops {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 28px 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--muted);
+  text-align: center;
 }
 
 .departure-list {
@@ -588,8 +677,29 @@ h2 {
     font-size: 1rem;
   }
 
-  .stop-manager {
+  .stop-manager,
+  .stop-editor {
     width: calc(100vw - 20px);
     max-height: calc(100vh - 24px);
+  }
+
+  .stop-editor-body {
+    padding-inline: 12px;
+  }
+
+  .stop-editor-item {
+    gap: 7px;
+    padding: 8px;
+  }
+
+  .drag-handle,
+  .editor-icon-button {
+    width: 30px;
+    height: 30px;
+  }
+
+  .visibility-button {
+    width: 38px;
+    height: 38px;
   }
 }

@@ -106,16 +106,30 @@ export function orderStops(stops, savedOrder = []) {
   return [...orderedStops, ...stops.filter((stop) => !orderedIds.has(stop.id))];
 }
 
-export function moveStop(stops, stopId, direction) {
-  const stopIds = stops.map((stop) => stop.id);
-  const currentIndex = stopIds.indexOf(stopId);
-  const offset = direction === "earlier" ? -1 : direction === "later" ? 1 : 0;
-  const targetIndex = currentIndex + offset;
+export function updateGroupStopSettings(settings, groupId, draft) {
+  const groupPrefix = `${groupId}:`;
+  const aliases = Object.fromEntries(
+    Object.entries(settings.aliases).filter(([key]) => !key.startsWith(groupPrefix)),
+  );
 
-  if (!offset || currentIndex < 0 || targetIndex < 0 || targetIndex >= stopIds.length) {
-    return stopIds;
-  }
+  Object.entries(draft.aliases).forEach(([stopId, value]) => {
+    const alias = typeof value === "string" ? value.trim() : "";
+    if (alias) {
+      aliases[`${groupPrefix}${stopId}`] = alias;
+    }
+  });
 
-  [stopIds[currentIndex], stopIds[targetIndex]] = [stopIds[targetIndex], stopIds[currentIndex]];
-  return stopIds;
+  const collapsed = [
+    ...settings.collapsed.filter((key) => !key.startsWith(groupPrefix)),
+    ...draft.hiddenStopIds.map((stopId) => `${groupPrefix}${stopId}`),
+  ];
+
+  return {
+    aliases,
+    collapsed,
+    order: {
+      ...settings.order,
+      [groupId]: [...draft.order],
+    },
+  };
 }
