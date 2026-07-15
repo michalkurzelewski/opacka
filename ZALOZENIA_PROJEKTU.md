@@ -21,7 +21,7 @@ Użytkownik otwiera skrót na telefonie, najlepiej z ekranu głównego, wybiera 
 - Usuwanie niepotrzebnych zakładek; wybór jest zapisywany lokalnie w danej przeglądarce.
 - Opacka i Płowce są dodawane domyślnie przy pierwszym uruchomieniu.
 - Ponowne naciśnięcie aktywnej zakładki otwiera osobny formularz edycji jej słupków.
-- W formularzu można zmieniać kolejność przez przeciąganie lub przyciski, ukrywać słupki oraz nadawać im własne aliasy.
+- W formularzu można zmieniać kolejność przyciskami, ukrywać słupki oraz edytować ich wyświetlane nazwy w pojedynczych polach tekstowych.
 - Alias, kolejność i widoczność są zapamiętywane lokalnie; ukryte słupki nie pojawiają się na ekranie głównym i nie są odpytywane o odjazdy.
 
 ## Dane źródłowe

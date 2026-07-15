@@ -76,7 +76,8 @@ Płowce:
 - Aliasy słupków, widoczność i kolejność są zapisane w `localStorage` pod kluczem `stopSettings`. Dla zgodności wstecznej lista ukrytych słupków nadal używa wewnętrznego pola `collapsed`.
 - Użytkownik może wyszukiwać zespoły po nazwie, strefie lub numerze słupka oraz dodawać i usuwać zakładki.
 - Ponowne naciśnięcie aktywnej zakładki otwiera modal edycji. Zmiany kolejności, aliasów i widoczności są szkicem aż do naciśnięcia „Zapisz zmiany”.
-- Kolejność można zmieniać przyciskami lub przez HTML drag and drop; przyciski pozostają obsługiwanym wariantem mobilnym.
+- Kolejność można zmieniać wyłącznie przyciskami wcześniej/później umieszczonymi po lewej stronie pola nazwy.
+- Pole nazwy zawiera alias, a gdy aliasu nie ma, pokazuje oryginalną nazwę słupka jako placeholder.
 - Ukryte słupki nie są renderowane na ekranie głównym ani odpytywane o odjazdy, lecz pozostają dostępne w modalnym edytorze.
 - Usunięcie całej zakładki jest dostępne zarówno w edytorze po potwierdzeniu, jak i w oknie „Moje przystanki”.
 - Snapshot `stops.json` został wygenerowany 2026-07-15 z oficjalnego zasobu „Lista przystanków ZTM w Gdańsku”.

@@ -88,7 +88,6 @@ let refreshRequestId = 0;
 const latestUpdateByGroupId = new Map();
 let stopSettings = parseStopSettings(null);
 let editedGroupId = null;
-let draggedStopEditorItem = null;
 
 function normalizeCatalogGroup(group) {
   return {
@@ -337,9 +336,6 @@ function renderStopEditorItem(group, stop) {
   return `
     <li class="stop-editor-item ${isHidden ? "is-hidden" : ""}" data-stop-editor-id="${escapeHtml(stop.id)}">
       <div class="stop-editor-move-controls">
-        <span class="drag-handle" draggable="true" title="Przeciągnij, aby zmienić kolejność" aria-hidden="true">
-          <svg viewBox="0 0 24 24"><path d="M8 7h8M8 12h8M8 17h8"></path></svg>
-        </span>
         <button class="editor-icon-button" type="button" data-editor-move="earlier" aria-label="Przesuń ${escapeHtml(stop.label)} wcześniej" title="Przesuń wcześniej">
           <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m7 14 5-5 5 5"></path></svg>
         </button>
@@ -347,10 +343,7 @@ function renderStopEditorItem(group, stop) {
           <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m7 10 5 5 5-5"></path></svg>
         </button>
       </div>
-      <label class="stop-editor-name">
-        <span>${escapeHtml(stop.label)}</span>
-        <input type="text" maxlength="40" value="${escapeHtml(alias)}" placeholder="Bez aliasu" data-stop-editor-alias autocomplete="off">
-      </label>
+      <input class="stop-editor-name" type="text" maxlength="40" value="${escapeHtml(alias)}" placeholder="${escapeHtml(stop.label)}" aria-label="Nazwa ${escapeHtml(stop.label)}" data-stop-editor-alias autocomplete="off">
       <button
         class="editor-icon-button visibility-button"
         type="button"
@@ -385,7 +378,7 @@ function openStopEditor(groupId) {
   }
 
   editedGroupId = group.id;
-  stopEditorTitle.textContent = `Edytuj: ${group.label}`;
+  stopEditorTitle.textContent = group.label;
   stopEditorList.innerHTML = group.stops.map((stop) => renderStopEditorItem(group, stop)).join("");
   deleteStopGroupButton.textContent = `Usuń ${group.label} z moich przystanków`;
   deleteStopGroupMessage.textContent = `Czy na pewno chcesz usunąć ${group.label} z zakładek?`;
@@ -736,40 +729,6 @@ function registerEventListeners() {
       toggleStopEditorVisibility(visibilityButton);
     }
   });
-  stopEditorList.addEventListener("dragstart", (event) => {
-    const handle = event.target.closest(".drag-handle");
-    if (!handle) {
-      return;
-    }
-
-    draggedStopEditorItem = handle.closest("[data-stop-editor-id]");
-    draggedStopEditorItem.classList.add("is-dragging");
-    event.dataTransfer.effectAllowed = "move";
-    event.dataTransfer.setData("text/plain", draggedStopEditorItem.dataset.stopEditorId);
-  });
-  stopEditorList.addEventListener("dragover", (event) => {
-    const targetItem = event.target.closest("[data-stop-editor-id]");
-    if (!draggedStopEditorItem || !targetItem || targetItem === draggedStopEditorItem) {
-      return;
-    }
-
-    event.preventDefault();
-    const bounds = targetItem.getBoundingClientRect();
-    const insertAfter = event.clientY > bounds.top + bounds.height / 2;
-    stopEditorList.insertBefore(
-      draggedStopEditorItem,
-      insertAfter ? targetItem.nextElementSibling : targetItem,
-    );
-  });
-  stopEditorList.addEventListener("drop", (event) => {
-    event.preventDefault();
-    updateStopEditorMoveButtons();
-  });
-  stopEditorList.addEventListener("dragend", () => {
-    draggedStopEditorItem?.classList.remove("is-dragging");
-    draggedStopEditorItem = null;
-    updateStopEditorMoveButtons();
-  });
   closeStopEditorButton.addEventListener("click", () => stopEditorDialog.close());
   cancelStopEditorButton.addEventListener("click", () => stopEditorDialog.close());
   deleteStopGroupButton.addEventListener("click", () => {
@@ -791,7 +750,6 @@ function registerEventListeners() {
   });
   stopEditorDialog.addEventListener("close", () => {
     editedGroupId = null;
-    draggedStopEditorItem = null;
   });
 }
 

@@ -141,7 +141,7 @@ h2 {
 .toggle-stop-button:focus-visible,
 .dialog-close-button:focus-visible,
 .stop-search:focus-visible,
-.stop-editor-name input:focus-visible,
+.stop-editor-name:focus-visible,
 .editor-icon-button:focus-visible,
 .secondary-button:focus-visible {
   outline: 3px solid rgba(15, 107, 85, 0.28);
@@ -364,13 +364,6 @@ h2 {
   overflow-y: auto;
 }
 
-.stop-editor-intro {
-  margin: 0 0 14px;
-  color: var(--muted);
-  font-size: 0.88rem;
-  line-height: 1.45;
-}
-
 .stop-editor-list {
   display: grid;
   gap: 8px;
@@ -395,18 +388,12 @@ h2 {
   opacity: 0.56;
 }
 
-.stop-editor-item.is-dragging {
-  border-color: var(--accent);
-  opacity: 0.45;
-}
-
 .stop-editor-move-controls {
   display: flex;
   align-items: center;
   gap: 3px;
 }
 
-.drag-handle,
 .editor-icon-button {
   display: inline-grid;
   width: 32px;
@@ -418,23 +405,10 @@ h2 {
   border-radius: 7px;
   background: var(--surface);
   color: var(--muted);
-}
-
-.drag-handle {
-  border-color: transparent;
-  cursor: grab;
-}
-
-.drag-handle:active {
-  cursor: grabbing;
-}
-
-.editor-icon-button {
   font: inherit;
   cursor: pointer;
 }
 
-.drag-handle svg,
 .editor-icon-button svg {
   width: 19px;
   height: 19px;
@@ -451,19 +425,8 @@ h2 {
 }
 
 .stop-editor-name {
-  min-width: 0;
-}
-
-.stop-editor-name span {
-  display: block;
-  margin-bottom: 4px;
-  overflow-wrap: anywhere;
-  font-size: 0.82rem;
-  font-weight: 800;
-}
-
-.stop-editor-name input {
   width: 100%;
+  min-width: 0;
   padding: 8px 9px;
   border: 1px solid var(--line);
   border-radius: 7px;
@@ -494,11 +457,6 @@ h2 {
   margin-top: 22px;
   padding-top: 16px;
   border-top: 1px solid var(--line);
-}
-
-.stop-editor-danger-zone h3 {
-  margin: 0 0 10px;
-  font-size: 0.92rem;
 }
 
 .delete-stop-group-confirmation {
@@ -692,7 +650,6 @@ h2 {
     padding: 8px;
   }
 
-  .drag-handle,
   .editor-icon-button {
     width: 30px;
     height: 30px;

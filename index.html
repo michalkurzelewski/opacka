@@ -45,21 +45,16 @@
     <dialog class="stop-editor" id="stopEditorDialog" aria-labelledby="stopEditorTitle">
       <form class="stop-editor-form" id="stopEditorForm">
         <div class="stop-manager-header">
-          <div>
-            <p class="eyebrow">Układ przystanku</p>
-            <h2 id="stopEditorTitle">Edytuj przystanek</h2>
-          </div>
+          <h2 id="stopEditorTitle">Edytuj przystanek</h2>
           <button class="dialog-close-button" id="closeStopEditorButton" type="button" aria-label="Zamknij bez zapisywania">×</button>
         </div>
         <div class="stop-editor-body">
-          <p class="stop-editor-intro">Przeciągnij słupki albo użyj strzałek. Przekreślone oko ukrywa słupek razem z jego odjazdami.</p>
           <ul class="stop-editor-list" id="stopEditorList"></ul>
           <div class="stop-editor-actions">
             <button class="secondary-button" id="cancelStopEditorButton" type="button">Anuluj</button>
             <button class="primary-button" type="submit">Zapisz zmiany</button>
           </div>
-          <section class="stop-editor-danger-zone" aria-labelledby="deleteStopGroupTitle">
-            <h3 id="deleteStopGroupTitle">Usuwanie przystanku</h3>
+          <section class="stop-editor-danger-zone">
             <button class="secondary-button danger-button" id="deleteStopGroupButton" type="button"></button>
             <div class="delete-stop-group-confirmation" id="deleteStopGroupConfirmation" hidden>
               <p id="deleteStopGroupMessage"></p>
