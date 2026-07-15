@@ -1,4 +1,4 @@
-const CACHE_NAME = "opacka-v4";
+const CACHE_NAME = "opacka-v5";
 const CACHE_PREFIX = "opacka-";
 const APP_FILES = [
   "./",

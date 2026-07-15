@@ -20,6 +20,8 @@ Użytkownik otwiera skrót na telefonie, najlepiej z ekranu głównego, wybiera 
 - Wyszukiwanie i dodawanie własnych zespołów przystankowych jako zakładek.
 - Usuwanie niepotrzebnych zakładek; wybór jest zapisywany lokalnie w danej przeglądarce.
 - Opacka i Płowce są dodawane domyślnie przy pierwszym uruchomieniu.
+- Każdy słupek można zwinąć, przesunąć wcześniej lub później w zakładce i nadać mu własny alias.
+- Alias, kolejność i stan zwinięcia są zapamiętywane lokalnie; zwinięte słupki nie są odpytywane o odjazdy.
 
 ## Dane źródłowe
 
@@ -59,3 +61,4 @@ Status z 2026-05-20: aplikacja jest opublikowana pod adresem `https://michalkurz
 - Pełna lista dostępna w wyszukiwarce jest statycznym snapshotem oficjalnej listy ZTM zapisanym w `stops.json`.
 - Ustawienia użytkownika zapisujemy w `localStorage`; nie są synchronizowane między urządzeniami.
 - Automatycznie odświeżamy wyłącznie przystanki należące do aktualnie otwartej zakładki.
+- W nagłówku słupka pokazujemy tylko jego nazwę albo alias; dodatkowe opisy typu „Słupek” i „Najbliższe odjazdy” zostały usunięte.

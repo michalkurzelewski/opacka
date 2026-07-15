@@ -1,8 +1,12 @@
 import {
   mergeDefaultAndCatalogGroups,
+  moveStop,
   normalizeSearchText,
+  orderStops,
   parseGroupSelection,
+  parseStopSettings,
   SELECTED_GROUPS_STORAGE_KEY,
+  STOP_SETTINGS_STORAGE_KEY,
 } from "./stop-preferences.mjs";
 
 const DEPARTURES_ENDPOINT = "https://ckan2.multimediagdansk.pl/departures?stopId=";
@@ -16,14 +20,12 @@ const DEFAULT_STOP_GROUPS = [
         id: "2048",
         label: "Opacka 02",
         code: "2048",
-        heading: "Do centrum i Wrzeszcza",
         endpoint: `${DEPARTURES_ENDPOINT}2048`,
       },
       {
         id: "2047",
-        label: "Opacka",
+        label: "Opacka 01",
         code: "2047",
-        heading: "Do Jelitkowa i Zaspy",
         endpoint: `${DEPARTURES_ENDPOINT}2047`,
       },
     ],
@@ -37,14 +39,12 @@ const DEFAULT_STOP_GROUPS = [
         id: "1330",
         label: "Płowce 01",
         code: "1330",
-        heading: "Do Śródmieścia",
         endpoint: `${DEPARTURES_ENDPOINT}1330`,
       },
       {
         id: "1331",
         label: "Płowce 02",
         code: "1331",
-        heading: "Do Jasienia, Oliwy i lotniska",
         endpoint: `${DEPARTURES_ENDPOINT}1331`,
       },
     ],
@@ -65,6 +65,12 @@ const stopManagerDialog = document.querySelector("#stopManagerDialog");
 const stopSearch = document.querySelector("#stopSearch");
 const stopManagerStatus = document.querySelector("#stopManagerStatus");
 const stopManagerList = document.querySelector("#stopManagerList");
+const aliasDialog = document.querySelector("#aliasDialog");
+const aliasForm = document.querySelector("#aliasForm");
+const aliasStopName = document.querySelector("#aliasStopName");
+const aliasInput = document.querySelector("#aliasInput");
+const removeAliasButton = document.querySelector("#removeAliasButton");
+const closeAliasButton = document.querySelector("#closeAliasButton");
 const formatter = new Intl.DateTimeFormat("pl-PL", {
   hour: "2-digit",
   minute: "2-digit",
@@ -78,6 +84,8 @@ let stopGroups = [];
 let activeGroupId = null;
 let catalogLoadError = "";
 let refreshRequestId = 0;
+let stopSettings = parseStopSettings(null);
+let editedStop = null;
 
 function normalizeCatalogGroup(group) {
   return {
@@ -88,7 +96,6 @@ function normalizeCatalogGroup(group) {
       id: String(stop.id),
       label: stop.label,
       code: stop.code || stop.id,
-      heading: "Najbliższe odjazdy",
       endpoint: `${DEPARTURES_ENDPOINT}${encodeURIComponent(stop.id)}`,
     })),
   };
@@ -122,7 +129,13 @@ function getInitialGroupId() {
 }
 
 function resolveSelectedGroups(groupIds) {
-  return groupIds.map((groupId) => availableGroupsById.get(groupId)).filter(Boolean);
+  return groupIds
+    .map((groupId) => availableGroupsById.get(groupId))
+    .filter(Boolean)
+    .map((group) => ({
+      ...group,
+      stops: orderStops(group.stops, stopSettings.order[group.id]),
+    }));
 }
 
 function formatStopCount(count) {
@@ -175,7 +188,7 @@ function renderShell() {
           role="tabpanel"
           aria-labelledby="tab-${group.id}"
         >
-          ${group.stops.map(renderStopPanel).join("")}
+          ${group.stops.map((stop, index) => renderStopPanel(group, stop, index)).join("")}
         </section>
       `,
     )
@@ -185,19 +198,84 @@ function renderShell() {
   selectGroup(activeGroupId, { persist: false });
 }
 
-function renderStopPanel(stop) {
+function stopSettingsKey(stopReference) {
+  return `${stopReference.groupId}:${stopReference.stopId}`;
+}
+
+function isStopCollapsed(stopReference) {
+  return stopSettings.collapsed.includes(stopSettingsKey(stopReference));
+}
+
+function renderStopPanel(group, stop, index) {
+  const stopReference = { groupId: group.id, stopId: stop.id };
+  const preferenceKey = stopSettingsKey(stopReference);
+  const isCollapsed = stopSettings.collapsed.includes(preferenceKey);
+  const alias = stopSettings.aliases[preferenceKey];
+  const displayLabel = alias || stop.label;
+  const originalNameTitle = alias ? ` title="Oryginalna nazwa: ${escapeHtml(stop.label)}"` : "";
+
   return `
-    <article class="stop-panel" data-stop-card="${escapeHtml(stop.id)}">
+    <article class="stop-panel ${isCollapsed ? "is-collapsed" : ""}" data-stop-card="${escapeHtml(stop.id)}">
       <div class="stop-heading">
-        <div>
-          <p class="stop-code">Słupek ${escapeHtml(stop.code)}</p>
-          <h2>${escapeHtml(stop.heading)}</h2>
+        <button
+          class="stop-title-button"
+          type="button"
+          data-toggle-stop-details
+          data-group-id="${group.id}"
+          data-stop-id="${escapeHtml(stop.id)}"
+          aria-expanded="${!isCollapsed}"
+          title="${isCollapsed ? "Rozwiń" : "Zwiń"} ${escapeHtml(displayLabel)}"
+        >
+          <svg class="collapse-chevron" aria-hidden="true" viewBox="0 0 24 24">
+            <path d="m7 10 5 5 5-5"></path>
+          </svg>
+          <span${originalNameTitle}>${escapeHtml(displayLabel)}</span>
+        </button>
+        <div class="stop-card-actions">
+          <button
+            class="stop-action-button"
+            type="button"
+            data-move-stop="earlier"
+            data-group-id="${group.id}"
+            data-stop-id="${escapeHtml(stop.id)}"
+            aria-label="Przesuń ${escapeHtml(displayLabel)} wcześniej"
+            title="Przesuń wcześniej"
+            ${index === 0 ? "disabled" : ""}
+          >
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m7 14 5-5 5 5"></path></svg>
+          </button>
+          <button
+            class="stop-action-button"
+            type="button"
+            data-move-stop="later"
+            data-group-id="${group.id}"
+            data-stop-id="${escapeHtml(stop.id)}"
+            aria-label="Przesuń ${escapeHtml(displayLabel)} później"
+            title="Przesuń później"
+            ${index === group.stops.length - 1 ? "disabled" : ""}
+          >
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m7 10 5 5 5-5"></path></svg>
+          </button>
+          <button
+            class="stop-action-button ${alias ? "has-alias" : ""}"
+            type="button"
+            data-edit-stop-alias
+            data-group-id="${group.id}"
+            data-stop-id="${escapeHtml(stop.id)}"
+            aria-label="Zmień nazwę ${escapeHtml(stop.label)}"
+            title="Nadaj alias"
+          >
+            <svg aria-hidden="true" viewBox="0 0 24 24">
+              <path d="M4 20h4l11-11-4-4L4 16v4ZM13.5 6.5l4 4"></path>
+            </svg>
+          </button>
         </div>
-        <span class="direction-pill">${escapeHtml(stop.label)}</span>
       </div>
-      <ul class="departure-list" id="departures-${escapeHtml(stop.id)}">
-        <li class="empty-state">Ładowanie odjazdów...</li>
-      </ul>
+      <div class="stop-details" ${isCollapsed ? "hidden" : ""}>
+        <ul class="departure-list" id="departures-${escapeHtml(stop.id)}">
+          <li class="empty-state">Ładowanie odjazdów...</li>
+        </ul>
+      </div>
     </article>
   `;
 }
@@ -246,6 +324,84 @@ function saveSelectedGroups(nextIds, preferredActiveId = activeGroupId) {
   if (activeGroupId) {
     refreshDepartures(activeGroupId);
   }
+}
+
+function persistStopSettingsAndRefresh() {
+  localStorage.setItem(STOP_SETTINGS_STORAGE_KEY, JSON.stringify(stopSettings));
+  stopGroups = resolveSelectedGroups(selectedGroupIds);
+  renderShell();
+
+  if (activeGroupId) {
+    refreshDepartures(activeGroupId);
+  }
+}
+
+function toggleStopDetails(stopReference) {
+  const preferenceKey = stopSettingsKey(stopReference);
+  const collapsed = new Set(stopSettings.collapsed);
+
+  if (collapsed.has(preferenceKey)) {
+    collapsed.delete(preferenceKey);
+  } else {
+    collapsed.add(preferenceKey);
+  }
+
+  stopSettings = { ...stopSettings, collapsed: [...collapsed] };
+  persistStopSettingsAndRefresh();
+}
+
+function reorderStop(stopReference, direction) {
+  const group = stopGroups.find((candidate) => candidate.id === stopReference.groupId);
+  if (!group) {
+    return;
+  }
+
+  stopSettings = {
+    ...stopSettings,
+    order: {
+      ...stopSettings.order,
+      [stopReference.groupId]: moveStop(group.stops, stopReference.stopId, direction),
+    },
+  };
+  persistStopSettingsAndRefresh();
+}
+
+function openAliasEditor(stopReference) {
+  const group = stopGroups.find((candidate) => candidate.id === stopReference.groupId);
+  const stop = group?.stops.find((candidate) => candidate.id === stopReference.stopId);
+  if (!stop) {
+    return;
+  }
+
+  const preferenceKey = stopSettingsKey(stopReference);
+  editedStop = stopReference;
+  aliasStopName.textContent = stop.label;
+  aliasInput.value = stopSettings.aliases[preferenceKey] || "";
+  removeAliasButton.hidden = !stopSettings.aliases[preferenceKey];
+  aliasDialog.showModal();
+  aliasInput.focus();
+  aliasInput.select();
+}
+
+function setEditedStopAlias(value) {
+  if (!editedStop) {
+    return;
+  }
+
+  const preferenceKey = stopSettingsKey(editedStop);
+  const aliases = { ...stopSettings.aliases };
+  const alias = value.trim();
+
+  if (alias) {
+    aliases[preferenceKey] = alias;
+  } else {
+    delete aliases[preferenceKey];
+  }
+
+  stopSettings = { ...stopSettings, aliases };
+  editedStop = null;
+  aliasDialog.close();
+  persistStopSettingsAndRefresh();
 }
 
 function toggleGroup(groupId) {
@@ -423,13 +579,25 @@ async function refreshDepartures(groupId = activeGroupId) {
     return;
   }
 
+  const visibleStops = group.stops.filter(
+    (stop) => !isStopCollapsed({ groupId: group.id, stopId: stop.id }),
+  );
+  if (!visibleStops.length) {
+    refreshRequestId += 1;
+    refreshButton.classList.remove("is-loading");
+    refreshButton.disabled = false;
+    statusText.textContent = "Wszystkie słupki są zwinięte";
+    updatedText.textContent = "";
+    return;
+  }
+
   const requestId = ++refreshRequestId;
   refreshButton.classList.add("is-loading");
   refreshButton.disabled = true;
   statusText.textContent = "Odświeżanie...";
 
   const results = await Promise.allSettled(
-    group.stops.map(async (stop) => [stop, await fetchStop(stop)]),
+    visibleStops.map(async (stop) => [stop, await fetchStop(stop)]),
   );
 
   if (requestId !== refreshRequestId) {
@@ -451,7 +619,7 @@ async function refreshDepartures(groupId = activeGroupId) {
     }
 
     failures += 1;
-    renderStopError(group.stops[index], result.reason);
+    renderStopError(visibleStops[index], result.reason);
   });
 
   if (group.id !== activeGroupId) {
@@ -459,7 +627,7 @@ async function refreshDepartures(groupId = activeGroupId) {
   }
 
   const newestUpdate = successfulUpdates.sort((a, b) => b - a)[0];
-  if (failures === group.stops.length) {
+  if (failures === visibleStops.length) {
     statusText.textContent = "Nie udało się pobrać odjazdów.";
     updatedText.textContent = "Spróbuj odświeżyć";
   } else {
@@ -469,6 +637,13 @@ async function refreshDepartures(groupId = activeGroupId) {
 
   refreshButton.classList.remove("is-loading");
   refreshButton.disabled = false;
+}
+
+function stopReferenceFromElement(element) {
+  return {
+    groupId: element.dataset.groupId,
+    stopId: element.dataset.stopId,
+  };
 }
 
 function registerEventListeners() {
@@ -483,6 +658,24 @@ function registerEventListeners() {
   stopPanels.addEventListener("click", (event) => {
     if (event.target.closest("[data-open-stop-manager]")) {
       openStopManager();
+      return;
+    }
+
+    const toggleButton = event.target.closest("[data-toggle-stop-details]");
+    if (toggleButton) {
+      toggleStopDetails(stopReferenceFromElement(toggleButton));
+      return;
+    }
+
+    const moveButton = event.target.closest("[data-move-stop]");
+    if (moveButton) {
+      reorderStop(stopReferenceFromElement(moveButton), moveButton.dataset.moveStop);
+      return;
+    }
+
+    const aliasButton = event.target.closest("[data-edit-stop-alias]");
+    if (aliasButton) {
+      openAliasEditor(stopReferenceFromElement(aliasButton));
     }
   });
 
@@ -500,6 +693,20 @@ function registerEventListeners() {
       stopManagerDialog.close();
     }
   });
+  aliasForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    setEditedStopAlias(aliasInput.value);
+  });
+  removeAliasButton.addEventListener("click", () => setEditedStopAlias(""));
+  closeAliasButton.addEventListener("click", () => aliasDialog.close());
+  aliasDialog.addEventListener("click", (event) => {
+    if (event.target === aliasDialog) {
+      aliasDialog.close();
+    }
+  });
+  aliasDialog.addEventListener("close", () => {
+    editedStop = null;
+  });
 }
 
 async function initialize() {
@@ -516,6 +723,7 @@ async function initialize() {
   }
 
   availableGroupsById = new Map(availableGroups.map((group) => [group.id, group]));
+  stopSettings = parseStopSettings(localStorage.getItem(STOP_SETTINGS_STORAGE_KEY));
   selectedGroupIds = getSavedGroupIds();
   stopGroups = resolveSelectedGroups(selectedGroupIds);
   activeGroupId = getInitialGroupId();

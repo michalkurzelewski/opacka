@@ -1,4 +1,5 @@
 export const SELECTED_GROUPS_STORAGE_KEY = "selectedStopGroups";
+export const STOP_SETTINGS_STORAGE_KEY = "stopSettings";
 
 export function parseGroupSelection(rawValue, availableIds, defaultIds) {
   if (rawValue === null) {
@@ -53,4 +54,68 @@ export function mergeDefaultAndCatalogGroups(defaultGroups, catalogGroups) {
     ...mergedDefaults,
     ...catalogGroups.filter((group) => !defaultLabels.has(normalizeSearchText(group.label))),
   ];
+}
+
+function emptyStopSettings() {
+  return { aliases: {}, collapsed: [], order: {} };
+}
+
+export function parseStopSettings(rawValue) {
+  if (rawValue === null) {
+    return emptyStopSettings();
+  }
+
+  try {
+    const parsed = JSON.parse(rawValue);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return emptyStopSettings();
+    }
+
+    const aliases = Object.fromEntries(
+      Object.entries(parsed.aliases || {}).filter(
+        ([key, value]) => typeof key === "string" && typeof value === "string" && value.trim(),
+      ),
+    );
+    const collapsed = [
+      ...new Set(
+        (Array.isArray(parsed.collapsed) ? parsed.collapsed : []).filter(
+          (key) => typeof key === "string",
+        ),
+      ),
+    ];
+    const order = Object.fromEntries(
+      Object.entries(parsed.order || {})
+        .filter(([, stopIds]) => Array.isArray(stopIds))
+        .map(([groupId, stopIds]) => [
+          groupId,
+          [...new Set(stopIds.filter((stopId) => typeof stopId === "string"))],
+        ]),
+    );
+
+    return { aliases, collapsed, order };
+  } catch {
+    return emptyStopSettings();
+  }
+}
+
+export function orderStops(stops, savedOrder = []) {
+  const stopsById = new Map(stops.map((stop) => [stop.id, stop]));
+  const orderedStops = savedOrder.map((stopId) => stopsById.get(stopId)).filter(Boolean);
+  const orderedIds = new Set(orderedStops.map((stop) => stop.id));
+
+  return [...orderedStops, ...stops.filter((stop) => !orderedIds.has(stop.id))];
+}
+
+export function moveStop(stops, stopId, direction) {
+  const stopIds = stops.map((stop) => stop.id);
+  const currentIndex = stopIds.indexOf(stopId);
+  const offset = direction === "earlier" ? -1 : direction === "later" ? 1 : 0;
+  const targetIndex = currentIndex + offset;
+
+  if (!offset || currentIndex < 0 || targetIndex < 0 || targetIndex >= stopIds.length) {
+    return stopIds;
+  }
+
+  [stopIds[currentIndex], stopIds[targetIndex]] = [stopIds[targetIndex], stopIds[currentIndex]];
+  return stopIds;
 }

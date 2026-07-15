@@ -21,6 +21,7 @@ Mała statyczna aplikacja webowa/PWA do sprawdzania odjazdów z kilku ulubionych
 - Wewnątrz zakładki są słupki z osobnymi endpointami `departures?stopId=...`.
 - Service worker cache'uje tylko pliki aplikacji, nie cache'uje odpowiedzi API ZTM.
 - `stop-preferences.mjs` zawiera testowalną logikę odczytu wyboru użytkownika i normalizacji wyszukiwania.
+- `stop-preferences.mjs` obsługuje również walidację ustawień słupków, ich zapamiętaną kolejność i bezpieczne przesuwanie.
 - `scripts/update-stops-snapshot.mjs` generuje statyczny katalog; uruchamiać go świadomie, gdy zostanie ustalona polityka aktualizacji. Po zmianie snapshotu trzeba też podbić `CACHE_NAME` w `sw.js`, aby zainstalowane PWA pobrały nową wersję.
 
 ## Źródło danych
@@ -72,7 +73,10 @@ Płowce:
 
 - Przy pierwszym uruchomieniu wybrane są Opacka i Płowce.
 - Identyfikatory wybranych zespołów są zapisane w `localStorage` pod kluczem `selectedStopGroups`.
+- Aliasy słupków, stan zwinięcia i kolejność są zapisane w `localStorage` pod kluczem `stopSettings`.
 - Użytkownik może wyszukiwać zespoły po nazwie, strefie lub numerze słupka oraz dodawać i usuwać zakładki.
+- Użytkownik może zwinąć słupek, zmienić jego pozycję przyciskami wcześniej/później oraz nadać lub usunąć alias.
+- Automatyczne odświeżanie pomija zwinięte słupki; rozwinięcie uruchamia ponowne pobranie aktywnej zakładki.
 - Snapshot `stops.json` został wygenerowany 2026-07-15 z oficjalnego zasobu „Lista przystanków ZTM w Gdańsku”.
 - Konfiguracja jest lokalna dla przeglądarki i nie synchronizuje się między urządzeniami.
 
