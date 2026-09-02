@@ -8,6 +8,7 @@ import {
   STOP_SETTINGS_STORAGE_KEY,
   updateGroupStopSettings,
 } from "./stop-preferences.mjs";
+import { fetchDepartures } from "./departures-client.mjs";
 
 const DEPARTURES_ENDPOINT = "https://ckan2.multimediagdansk.pl/departures?stopId=";
 const DEFAULT_STOP_GROUPS = [
@@ -503,12 +504,11 @@ function openStopManager() {
 }
 
 async function fetchStop(stop) {
-  const response = await fetch(stop.endpoint, { cache: "no-store" });
-  if (!response.ok) {
+  try {
+    return await fetchDepartures(stop.endpoint);
+  } catch {
     throw new Error(`Nie udało się pobrać danych dla ${stop.label}.`);
   }
-
-  return response.json();
 }
 
 function departureDate(departure) {

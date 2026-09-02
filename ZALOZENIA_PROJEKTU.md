@@ -58,6 +58,9 @@ Status z 2026-05-20: aplikacja jest opublikowana pod adresem `https://michalkurz
 - Budujemy małą aplikację webową/PWA zamiast natywnej aplikacji mobilnej.
 - Aplikacja nie potrzebuje backendu.
 - Dane pobieramy z oficjalnego API `ckan2.multimediagdansk.pl/departures`.
+- Oficjalny endpoint jest zawsze pierwszym wyborem. Gdy przeglądarka odrzuca go z
+  powodu braku CORS, aplikacja awaryjnie pobiera ten sam publiczny JSON przez proxy
+  `corsproxy.nl`, ograniczone wyłącznie do numerycznych identyfikatorów przystanków.
 - Przystanki są grupowane jako zakładki, a słupki przystankowe jako panele wewnątrz aktywnej zakładki.
 - Pełna lista dostępna w wyszukiwarce jest statycznym snapshotem oficjalnej listy ZTM zapisanym w `stops.json`.
 - Ustawienia użytkownika zapisujemy w `localStorage`; nie są synchronizowane między urządzeniami.

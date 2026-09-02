@@ -36,7 +36,16 @@ Nagłówki sprawdzone 2026-05-20:
 - `Access-Control-Allow-Origin: *`
 - `Cache-Control: max-age=20`
 
-Frontend może wykonywać `fetch` bez backendu/proxy.
+Pierwotnie frontend mógł wykonywać bezpośredni `fetch` bez backendu/proxy. Od
+2026-09-02 API okresowo nie wysyła nagłówka `Access-Control-Allow-Origin`, mimo że
+zwraca HTTP 200 i poprawny JSON. `departures-client.mjs` zawsze próbuje najpierw
+oficjalnego endpointu, a wyłącznie po sieciowym `TypeError` przeglądarki korzysta z
+`https://corsproxy.nl`. Fallback jest ograniczony do numerycznych `stopId` pod
+`ckan2.multimediagdansk.pl/departures`; odpowiedzi API nadal nie są cache'owane przez
+service workera. Po pierwszej porażce klient przez 5 minut omija nieskuteczną próbę
+bezpośrednią. Żądanie proxy nie zawiera cookies ani referrera, ale jego operator widzi
+numer przystanku i standardowe metadane połączenia. Gdy oficjalny CORS wróci, proxy nie
+bierze udziału w żądaniu.
 
 ## Struktura danych JSON
 

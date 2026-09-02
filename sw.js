@@ -1,10 +1,11 @@
-const CACHE_NAME = "opacka-v8";
+const CACHE_NAME = "opacka-v9";
 const CACHE_PREFIX = "opacka-";
 const APP_FILES = [
   "./",
   "./index.html",
   "./styles.css",
   "./app.js",
+  "./departures-client.mjs",
   "./stop-preferences.mjs",
   "./stops.json",
   "./manifest.webmanifest",
@@ -46,7 +47,10 @@ self.addEventListener("message", (event) => {
 self.addEventListener("fetch", (event) => {
   const requestUrl = new URL(event.request.url);
 
-  if (requestUrl.hostname === "ckan2.multimediagdansk.pl") {
+  if (
+    requestUrl.hostname === "ckan2.multimediagdansk.pl" ||
+    requestUrl.hostname === "corsproxy.nl"
+  ) {
     event.respondWith(fetch(event.request));
     return;
   }
