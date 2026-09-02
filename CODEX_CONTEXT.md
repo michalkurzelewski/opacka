@@ -17,6 +17,7 @@ Mała statyczna aplikacja webowa/PWA do sprawdzania odjazdów z kilku ulubionych
 
 - Bez bundlera i backendu: czysty `index.html`, `styles.css`, `app.js`.
 - `app.js` ma domyślną konfigurację `DEFAULT_STOP_GROUPS` oraz wczytuje pełny katalog ze `stops.json`.
+- `stop-catalog.mjs` rozdziela stabilny publiczny numer słupka od technicznego `stopId` używanego przez API i normalizuje snapshot do modelu aplikacji.
 - Każdy element listy wybranych grup to zakładka dla jednego zespołu przystanków.
 - Wewnątrz zakładki są słupki z osobnymi endpointami `departures?stopId=...`.
 - Service worker cache'uje tylko pliki aplikacji, nie cache'uje odpowiedzi API ZTM.
@@ -29,6 +30,11 @@ Mała statyczna aplikacja webowa/PWA do sprawdzania odjazdów z kilku ulubionych
 Oficjalne API:
 
 - `https://ckan2.multimediagdansk.pl/departures?stopId={stopId}`
+
+Zasób wymaga pola `stopId` z bieżącej „Listy przystanków”. Nie wolno zastępować go
+wartością `stopShortName`: publiczny numer jest dobrym stabilnym kluczem dla UI i
+`localStorage`, ale może różnić się od technicznego identyfikatora TRISTAR. Snapshot
+przechowuje je odpowiednio jako `id` i `departuresStopId`.
 
 Nagłówki sprawdzone 2026-05-20:
 
@@ -44,8 +50,8 @@ oficjalnego endpointu, a wyłącznie po sieciowym `TypeError` przeglądarki korz
 `ckan2.multimediagdansk.pl/departures`; odpowiedzi API nadal nie są cache'owane przez
 service workera. Po pierwszej porażce klient przez 5 minut omija nieskuteczną próbę
 bezpośrednią. Żądanie proxy nie zawiera cookies ani referrera, ale jego operator widzi
-numer przystanku i standardowe metadane połączenia. Gdy oficjalny CORS wróci, proxy nie
-bierze udziału w żądaniu.
+techniczny identyfikator przystanku i standardowe metadane połączenia. Gdy oficjalny
+CORS wróci, proxy nie bierze udziału w żądaniu.
 
 ## Struktura danych JSON
 
@@ -89,7 +95,8 @@ Płowce:
 - Pole nazwy zawiera alias, a gdy aliasu nie ma, pokazuje oryginalną nazwę słupka jako placeholder.
 - Ukryte słupki nie są renderowane na ekranie głównym ani odpytywane o odjazdy, lecz pozostają dostępne w modalnym edytorze.
 - Usunięcie całej zakładki jest dostępne zarówno w edytorze po potwierdzeniu, jak i w oknie „Moje przystanki”.
-- Snapshot `stops.json` został wygenerowany 2026-07-15 z oficjalnego zasobu „Lista przystanków ZTM w Gdańsku”.
+- Snapshot `stops.json` został wygenerowany 2026-09-02 z oficjalnego zasobu „Lista przystanków ZTM w Gdańsku”.
+- `stop.id` pozostaje publicznym numerem słupka używanym w ustawieniach, natomiast `stop.departuresStopId` jest bieżącym identyfikatorem technicznym używanym wyłącznie do pobierania odjazdów.
 - Konfiguracja jest lokalna dla przeglądarki i nie synchronizuje się między urządzeniami.
 
 ## UX notatki
@@ -118,6 +125,7 @@ Najprostsza ścieżka weryfikacji po zmianach:
 
 1. Sprawdź składnię:
    - `node --check app.js`
+   - `node --check stop-catalog.mjs`
    - `node --check sw.js`
 2. Sprawdź, czy statyczny serwer odpowiada, uruchamiając go tylko na czas jednej komendy:
    - `$job = Start-Job -ScriptBlock { Set-Location 'C:\Users\micku\RiderProjects\opacka'; python -m http.server 4173 --bind 127.0.0.1 }; Start-Sleep -Seconds 2; try { (Invoke-WebRequest -Uri 'http://127.0.0.1:4173/' -UseBasicParsing).StatusCode } finally { Stop-Job $job; Remove-Job $job }`

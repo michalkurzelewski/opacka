@@ -8,5 +8,9 @@ Ponowne naciśnięcie aktywnej zakładki otwiera edytor, w którym można zmieni
 
 Źródło danych: `https://ckan2.multimediagdansk.pl/departures`. Aplikacja odpytuje je
 bezpośrednio, a przy błędzie sieciowym przeglądarki korzysta z ograniczonego do tego
-endpointu proxy CORS. Podczas działania fallbacku operator proxy widzi publiczny numer
-przystanku oraz standardowe metadane połączenia; aplikacja nie wysyła cookies ani referrera.
+endpointu proxy CORS. Podczas działania fallbacku operator proxy widzi techniczny
+identyfikator przystanku oraz standardowe metadane połączenia; aplikacja nie wysyła
+cookies ani referrera.
+
+Statyczny katalog zachowuje publiczny numer słupka jako stabilny klucz ustawień oraz
+osobno bieżący techniczny `stopId` wymagany przez API odjazdów.

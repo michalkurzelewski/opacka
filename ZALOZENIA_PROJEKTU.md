@@ -63,6 +63,7 @@ Status z 2026-05-20: aplikacja jest opublikowana pod adresem `https://michalkurz
   `corsproxy.nl`, ograniczone wyłącznie do numerycznych identyfikatorów przystanków.
 - Przystanki są grupowane jako zakładki, a słupki przystankowe jako panele wewnątrz aktywnej zakładki.
 - Pełna lista dostępna w wyszukiwarce jest statycznym snapshotem oficjalnej listy ZTM zapisanym w `stops.json`.
+- Publiczny numer słupka zachowujemy jako stabilny klucz ustawień, a oddzielne bieżące pole `stopId` z katalogu ZTM służy do pobierania odjazdów; te wartości nie zawsze są takie same.
 - Ustawienia użytkownika zapisujemy w `localStorage`; nie są synchronizowane między urządzeniami.
 - Automatycznie odświeżamy wyłącznie przystanki należące do aktualnie otwartej zakładki.
 - W nagłówku słupka pokazujemy tylko jego nazwę albo alias; dodatkowe opisy typu „Słupek” i „Najbliższe odjazdy” zostały usunięte.

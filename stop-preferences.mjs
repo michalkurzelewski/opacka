@@ -40,11 +40,28 @@ export function mergeDefaultAndCatalogGroups(defaultGroups, catalogGroups) {
       return defaultGroup;
     }
 
+    const catalogStopsById = new Map(
+      matchingCatalogGroup.stops.map((stop) => [stop.id, stop]),
+    );
+    const mergedDefaultStops = defaultGroup.stops.map((defaultStop) => {
+      const catalogStop = catalogStopsById.get(defaultStop.id);
+      if (!catalogStop) {
+        return defaultStop;
+      }
+
+      return {
+        ...catalogStop,
+        ...defaultStop,
+        departuresStopId:
+          catalogStop.departuresStopId || defaultStop.departuresStopId,
+        endpoint: catalogStop.endpoint || defaultStop.endpoint,
+      };
+    });
     const defaultStopIds = new Set(defaultGroup.stops.map((stop) => stop.id));
     return {
       ...defaultGroup,
       stops: [
-        ...defaultGroup.stops,
+        ...mergedDefaultStops,
         ...matchingCatalogGroup.stops.filter((stop) => !defaultStopIds.has(stop.id)),
       ],
     };

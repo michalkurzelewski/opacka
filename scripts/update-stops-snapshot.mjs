@@ -2,6 +2,8 @@ import { createHash } from "node:crypto";
 import { writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 
+import { normalizeSourceStop } from "../stop-catalog.mjs";
+
 const SOURCE_URL =
   "https://ckan.multimediagdansk.pl/dataset/c24aa637-3619-4dc2-a171-a23eec8f2172/resource/d3e96eb6-25ad-4d6c-8651-b1eb39155945/download/stopsingdansk.json";
 const OUTPUT_URL = new URL("../stops.json", import.meta.url);
@@ -20,18 +22,6 @@ function isPassengerStop(stop) {
   return !stop.virtual && !stop.nonpassenger && !stop.depot && stop.stopName;
 }
 
-function normalizeStop(stop) {
-  const code = String(stop.subName || stop.stopCode || "").trim();
-  const id = String(stop.stopShortName || stop.stopId).trim();
-
-  return {
-    id,
-    code,
-    label: code ? `${stop.stopName} ${code}` : stop.stopName,
-    type: stop.type || "",
-  };
-}
-
 function buildGroups(stops) {
   const grouped = new Map();
 
@@ -46,7 +36,7 @@ function buildGroups(stops) {
       stops: [],
     };
 
-    group.stops.push(normalizeStop(stop));
+    group.stops.push(normalizeSourceStop(stop));
     grouped.set(key, group);
   });
 

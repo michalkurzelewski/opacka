@@ -9,8 +9,8 @@ import {
   updateGroupStopSettings,
 } from "./stop-preferences.mjs";
 import { fetchDepartures } from "./departures-client.mjs";
+import { DEPARTURES_ENDPOINT, parseStopCatalog } from "./stop-catalog.mjs";
 
-const DEPARTURES_ENDPOINT = "https://ckan2.multimediagdansk.pl/departures?stopId=";
 const DEFAULT_STOP_GROUPS = [
   {
     id: "opacka",
@@ -90,20 +90,6 @@ const latestUpdateByGroupId = new Map();
 let stopSettings = parseStopSettings(null);
 let editedGroupId = null;
 
-function normalizeCatalogGroup(group) {
-  return {
-    id: group.id,
-    label: group.label,
-    note: group.note,
-    stops: group.stops.map((stop) => ({
-      id: String(stop.id),
-      label: stop.label,
-      code: stop.code || stop.id,
-      endpoint: `${DEPARTURES_ENDPOINT}${encodeURIComponent(stop.id)}`,
-    })),
-  };
-}
-
 async function loadStopCatalog() {
   const response = await fetch("./stops.json");
   if (!response.ok) {
@@ -111,11 +97,7 @@ async function loadStopCatalog() {
   }
 
   const snapshot = await response.json();
-  if (!Array.isArray(snapshot.groups)) {
-    throw new Error("Nieoczekiwany format katalogu przystanków.");
-  }
-
-  return snapshot.groups.map(normalizeCatalogGroup);
+  return parseStopCatalog(snapshot);
 }
 
 function getSavedGroupIds() {

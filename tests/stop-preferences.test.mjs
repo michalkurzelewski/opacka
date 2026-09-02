@@ -39,13 +39,32 @@ test("normalizes Polish diacritics and case for searching", () => {
 
 test("merges extra catalog poles into a matching default group", () => {
   const defaults = [
-    { id: "opacka", label: "Opacka", stops: [{ id: "2047", heading: "Własny opis" }] },
+    {
+      id: "opacka",
+      label: "Opacka",
+      stops: [
+        {
+          id: "2047",
+          departuresStopId: "2047",
+          heading: "Własny opis",
+          endpoint: "https://example.test/departures?stopId=2047",
+        },
+      ],
+    },
   ];
   const catalog = [
     {
       id: "ztm-opacka",
       label: "Opacka",
-      stops: [{ id: "2047", heading: "Ogólny opis" }, { id: "1665" }],
+      stops: [
+        {
+          id: "2047",
+          departuresStopId: "12047",
+          heading: "Ogólny opis",
+          endpoint: "https://example.test/departures?stopId=12047",
+        },
+        { id: "1665" },
+      ],
     },
     { id: "ztm-oliwa", label: "Oliwa", stops: [{ id: "2045" }] },
   ];
@@ -54,7 +73,15 @@ test("merges extra catalog poles into a matching default group", () => {
     {
       id: "opacka",
       label: "Opacka",
-      stops: [{ id: "2047", heading: "Własny opis" }, { id: "1665" }],
+      stops: [
+        {
+          id: "2047",
+          departuresStopId: "12047",
+          heading: "Własny opis",
+          endpoint: "https://example.test/departures?stopId=12047",
+        },
+        { id: "1665" },
+      ],
     },
     { id: "ztm-oliwa", label: "Oliwa", stops: [{ id: "2045" }] },
   ]);
